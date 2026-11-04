@@ -1,0 +1,29 @@
+{
+ "goal": 5,
+ "streak": 0,
+ "lastGoalDay": "",
+ "goalHitDay": "",
+ "doneLog": {},
+ "focusLog": {},
+ "archive": [],
+ "lastReview": "",
+ "muted": false,
+ "autoStart": false,
+ "exportPath": "/home/ryo2s/Documents/todo-export.md",
+ "importPath": "/home/ryo2s/Documents/todo-import.md",
+ "wipLimit": 0,
+ "celebrateEach": true,
+ "soundOnDone": true,
+ "soundOnTimer": true,
+ "templates": [],
+ "lastPlanDay": "",
+ "accentCustom": "",
+ "timer": {
+  "modeIndex": 0,
+  "remaining": 1500,
+  "running": false,
+  "endAt": 0,
+  "sessions": 0,
+  "activeTaskId": -1
+ }
+}

@@ -1,0 +1,54 @@
+{
+  "id": "todostatus",
+  "name": "Todo status",
+  "version": "0.1.0",
+  "author": "ryo2s42 \u003cryobusiness976@gmail.com\u003e",
+  "description": "Shows the urgent task count and the current focus task from the todo panel; click to open the panel.",
+  "license": "MIT",
+  "official": false,
+  "hosts": [
+    "topbarGlyph"
+  ],
+  "entryPoints": {
+    "main": "service/Main.qml",
+    "content": "content/Widget.qml",
+    "panel": "content/Panel.qml"
+  },
+  "panel": {
+    "width": 280
+  },
+  "files": [],
+  "capabilities": {
+    "densities": [
+      "glyph",
+      "compact"
+    ]
+  },
+  "defaults": {
+    "host": "topbarGlyph",
+    "label": "Todo status"
+  },
+  "dependencies": {
+    "commands": [
+      "qs"
+    ]
+  },
+  "metadata": {
+    "settings": [
+      {
+        "key": "showTask",
+        "type": "toggle",
+        "label": "Show the task name while focusing",
+        "group": "Todo status",
+        "default": true
+      },
+      {
+        "key": "showGoal",
+        "type": "toggle",
+        "label": "Show daily goal progress when idle",
+        "group": "Todo status",
+        "default": true
+      }
+    ]
+  }
+}
