@@ -1,0 +1,8 @@
+{
+ "vaultPath": "/home/ryo2s/Pictures/special",
+ "autoLockMinutes": 10,
+ "lockOnClose": true,
+ "lastSection": "Us",
+ "specialSecret": true,
+ "specialRevealed": true
+}

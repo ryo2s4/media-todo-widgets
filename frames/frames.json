@@ -1,0 +1,131 @@
+{
+ "frames": [
+  {
+   "id": "starpulse",
+   "name": "Star pulse (animated)",
+   "file": "starpulse.webp",
+   "gif": "starpulse.gif",
+   "kind": "anim",
+   "hole": 0.66,
+   "cx": 0.5,
+   "cy": 0.5
+  },
+  {
+   "id": "hud",
+   "name": "HUD ring",
+   "file": "hud.png",
+   "kind": "ring",
+   "hole": 0.812,
+   "cx": 0.498,
+   "cy": 0.501
+  },
+  {
+   "id": "stars",
+   "name": "Checker stars",
+   "file": "stars.png",
+   "kind": "ring",
+   "hole": 0.691,
+   "cx": 0.506,
+   "cy": 0.504
+  },
+  {
+   "id": "ghosts",
+   "name": "Ghosts",
+   "file": "ghosts.png",
+   "kind": "ring",
+   "hole": 0.655,
+   "cx": 0.519,
+   "cy": 0.482
+  },
+  {
+   "id": "wreath",
+   "name": "Blue wreath",
+   "file": "wreath.png",
+   "kind": "ring",
+   "hole": 0.632,
+   "cx": 0.483,
+   "cy": 0.469
+  },
+  {
+   "id": "error",
+   "name": "Error",
+   "file": "error.png",
+   "kind": "ring",
+   "hole": 0.71,
+   "cx": 0.496,
+   "cy": 0.501
+  },
+  {
+   "id": "ouija",
+   "name": "Ouija",
+   "file": "ouija.png",
+   "kind": "ring",
+   "hole": 0.676,
+   "cx": 0.514,
+   "cy": 0.503
+  },
+  {
+   "id": "scribble",
+   "name": "Scribble",
+   "file": "scribble.png",
+   "kind": "ring",
+   "hole": 0.656,
+   "cx": 0.489,
+   "cy": 0.498
+  },
+  {
+   "id": "bang",
+   "name": "Exclamation sticker",
+   "file": "bang.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "claws",
+   "name": "Claw marks",
+   "file": "claws.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "tangle",
+   "name": "Tangle",
+   "file": "tangle.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "bolt",
+   "name": "Bolt",
+   "file": "bolt.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "ears",
+   "name": "Bunny ears",
+   "file": "ears.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "doublebang",
+   "name": "Double bang",
+   "file": "doublebang.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "shuriken",
+   "name": "Red shuriken",
+   "file": "shuriken.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "sketchstar",
+   "name": "Sketch star",
+   "file": "sketchstar.png",
+   "kind": "sticker"
+  },
+  {
+   "id": "spiky",
+   "name": "Spiky blob",
+   "file": "spiky.png",
+   "kind": "sticker"
+  }
+ ]
+}
