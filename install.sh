@@ -74,7 +74,8 @@ install_widget() {
     # preserve anything the widget has written for this user
     local f
     for f in tasks.json state.json status.json settings.json special.json \
-             library.json notifs.json weather.json; do
+             library.json favorites.json notifs.json notifications.json \
+             note.txt cava.conf weather.json; do
         [ -f "$dst/$f" ] && cp -a "$dst/$f" "$keep/$f"
     done
     [ -d "$dst/backups" ] && cp -a "$dst/backups" "$keep/backups"
@@ -82,7 +83,8 @@ install_widget() {
     cp -a "$src/." "$dst/"
 
     for f in tasks.json state.json status.json settings.json special.json \
-             library.json notifs.json weather.json; do
+             library.json favorites.json notifs.json notifications.json \
+             note.txt cava.conf weather.json; do
         [ -f "$keep/$f" ] && cp -a "$keep/$f" "$dst/$f"
     done
     if [ -d "$keep/backups" ]; then

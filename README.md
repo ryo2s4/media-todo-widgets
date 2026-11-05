@@ -24,8 +24,8 @@ It:
 - checks for `quickshell`, `git`, `curl` (and the media panel's optional
   `gpg`/file-picker tools), installing them with pacman/apt/dnf when possible;
 - copies the three widgets to `~/.config/quickshell/`;
-- **preserves your existing tasks, settings, notifications, weather cache and
-  todo backups** when updating;
+- **preserves your existing tasks, settings, music favourites, scratch note,
+  cava config, notifications, weather cache and todo backups** when updating;
 - installs `~/.local/bin/media-toggle` and `~/.local/bin/calendar-toggle`;
 - adds the startup lines and keybinds to `~/.config/hypr/user.lua` when missing;
 - starts the panels.
@@ -56,7 +56,8 @@ Everything user-specific stays local:
 
 - `todo/tasks.json`, `todo/state.json`, `todo/status.json`
 - `media/settings.json`, `media/special.json`, `media/library.json`,
-  `media/notifs.json`, `media/weather.json`
+  `media/favorites.json`, `media/notifs.json`, `media/note.txt`,
+  `media/cava.conf`, `media/weather.json`
 - `calendar/settings.json`, `calendar/weather.json`
 
 Repositories are shipped with clean defaults, not the author's tasks, location,
