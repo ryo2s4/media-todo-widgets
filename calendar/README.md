@@ -51,8 +51,10 @@ and `17:30`. Quick-add accepts the same with `@`.
   `weather.json` and refreshes every 30 minutes.
 
 Click the gear in the header (or the empty gif slot) for Settings: the gif path,
-the weather city (empty = guess from the network), and °C/°F. The panel reads
-`~/.cache/ryoku/colors.json`, so it follows the Ryoku palette and accent.
+the weather city (empty = guess from the network), and °C/°F. No gif is bundled
+(paths and copyright), so the slot shows a clickable placeholder until you pick
+one. The panel reads `~/.cache/ryoku/colors.json`, so it follows the Ryoku
+palette and accent.
 
 ## Dependencies
 

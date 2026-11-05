@@ -42,7 +42,9 @@ single writer.
 Under the month: the real moon phase (calculated from the moon's age), a clock,
 and Open-Meteo weather (city in Settings, or automatic IP lookup). The gif under
 the tray is a single permanent gif; set its path in the calendar's Settings
-(gear in the header) or edit `~/.config/quickshell/calendar/settings.json`.
+(gear in the header) or edit `~/.config/quickshell/calendar/settings.json`. No
+gif is bundled (paths and copyright), so the slot shows a clickable placeholder
+until you choose one.
 
 The todo board supports due dates and times today: in quick-add use
 `Call the bank @tomorrow 17:30`, or edit a task and put `tomorrow 17:30` in the
