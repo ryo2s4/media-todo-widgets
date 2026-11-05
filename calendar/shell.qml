@@ -214,7 +214,14 @@ ShellRoot {
         // ───────── todo bridge ─────────
         Process {
             id: addProc
-            onExited: if (addIn.text === "") addIn.forceActiveFocus()
+            property string pendingTitle: ""
+            onExited: function (code) {
+                if (code !== 0 && pendingTitle !== "" && addIn.text === "")
+                    addIn.text = pendingTitle;
+                pendingTitle = "";
+                if (addIn.text === "")
+                    addIn.forceActiveFocus();
+            }
         }
         Process {
             id: toggleProc
@@ -248,6 +255,7 @@ ShellRoot {
                 }
             }
             var when = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), hh, mm, 0, 0).getTime();
+            addProc.pendingTitle = title;
             addProc.command = ["qs", "-c", "todo", "ipc", "call", "todo", "addTask", title, String(when)];
             addProc.running = true;
             addIn.text = "";
