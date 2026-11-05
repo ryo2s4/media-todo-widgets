@@ -861,11 +861,19 @@ ShellRoot {
                     z: -1
                 }
 
+                // keep clicks and scrolling on the card while it is open
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.AllButtons
+                    onWheel: function (wheel) { wheel.accepted = true }
+                }
+
                 Column {
                     x: 24
                     y: 22
                     width: parent.width - 48
                     spacing: 15
+                    z: 1
 
                     Item {
                         width: parent.width
