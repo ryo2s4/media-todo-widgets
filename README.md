@@ -6,7 +6,7 @@ Three self-contained panels for a Hyprland/Ryoku desktop:
 |---|---|---|
 | `media/` | media player, home dashboard, games, notifications, profile/Special tab | `SUPER + M`, `SUPER + G` |
 | `todo/` | right-side todo board with projects, tags, due dates, pomodoro, calendar sheet | `SUPER + S` |
-| `calendar/` | month grid of todo due dates, day agenda + quick add, moon / clock / weather tray, one gif | `SUPER + ALT + C` |
+| `calendar/` | compact square calendar: month grid + day task list, moving lunar line, clock, weather, one square gif | `SUPER + ALT + C` |
 
 ## Install
 
@@ -34,17 +34,19 @@ If Hyprland does not see a new keybind immediately, run `hyprctl reload`.
 
 ## Calendar
 
-`calendar/` reads the todo board's `tasks.json` live (read-only) and shows every
-due task on its day and time. Clicking a day opens its agenda; adding a task or
-checking one off goes through the todo panel's IPC, so the todo board remains the
-single writer.
+`calendar/` is a square card at the top-right of the focused monitor. It reads
+the todo board's `tasks.json` live (read-only): the compact month grid shows due
+times on their days, and the task column beside it holds the selected day's full
+list. Adding a task or checking one off goes through the todo panel's IPC, so
+the todo board remains the single writer.
 
-Under the month: the real moon phase (calculated from the moon's age), a clock,
-and Open-Meteo weather (city in Settings, or automatic IP lookup). The gif under
-the tray is a single permanent gif; set its path in the calendar's Settings
-(gear in the header) or edit `~/.config/quickshell/calendar/settings.json`. No
-gif is bundled (paths and copyright), so the slot shows a clickable placeholder
-until you choose one.
+The clock sits at the top; underneath it a lunar-month line moves with the real
+moon's age and changes its phase shape as the month turns. Weather (Open-Meteo;
+city in Settings, or automatic IP lookup) sits directly under that line. A single
+square gif sits under the month; set its path in the calendar's Settings (gear in
+the header) or edit `~/.config/quickshell/calendar/settings.json`. No gif is
+bundled (paths and copyright), so the slot shows a clickable placeholder until
+you choose one. `panelWidth` in settings sets the square's size.
 
 The todo board supports due dates and times today: in quick-add use
 `Call the bank @tomorrow 17:30`, or edit a task and put `tomorrow 17:30` in the

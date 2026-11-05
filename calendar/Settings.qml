@@ -13,7 +13,7 @@ Scope {
     property string city: ""             // empty = guess from the IP address
     property string units: "c"           // "c" | "f"
     property int panelWidth: 560
-    property real panelOpacity: 0.94
+    property real panelOpacity: 1.0
     property string accentOverride: ""   // "#rrggbb", empty = Ryoku palette
 
     readonly property var strKeys: ["gif", "city", "units", "accentOverride"]

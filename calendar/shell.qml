@@ -15,28 +15,34 @@ ShellRoot {
     PanelWindow {
         id: root
 
-        readonly property int panelW: cfg.panelWidth
-        // the Ryoku top bar owns the first 38 px; start below it so the month
-        // header is never swallowed by the bar.
+        readonly property int size: Math.min(620, Math.max(520, cfg.panelWidth))
+        // the Ryoku top bar owns the first 38 px; start below it so the square
+        // card drops out from under the bar at the top-right.
         readonly property int topInset: 38
         property bool open: false
         property bool settingsOpen: false
         property int calYear: new Date().getFullYear()
         property int calMonth: new Date().getMonth()
         property string selectedKey: store.todayKey()
+        property date now: new Date()
 
         anchors { top: true; bottom: true; right: true }
-        implicitWidth: panelW + th.gap * 2
+        implicitWidth: size + th.gap * 2
         color: "transparent"
         exclusionMode: ExclusionMode.Ignore
-        visible: open || panel.x < implicitWidth - 1
+        visible: open || panel.y > -panel.height + 1
         mask: Region { item: panel }
 
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.namespace: "calendar-panel"
         WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
-        onOpenChanged: if (open) Qt.callLater(focusScope.forceActiveFocus)
+        onOpenChanged: {
+            if (open)
+                Qt.callLater(focusScope.forceActiveFocus);
+            else
+                settingsOpen = false;
+        }
 
         function focusMonitor() {
             var m = Hyprland.focusedMonitor;
@@ -80,6 +86,7 @@ ShellRoot {
             function show(): void { root.openPanel(); }
             function open(): void { root.openPanel(); }
             function hide(): void { root.open = false; }
+            function closeSettings(): void { root.settingsOpen = false; }
             function today(): void { root.goToday(); root.openPanel(); }
             function settings(): void { root.settingsOpen = true; root.openPanel(); }
             function select(key: string): string {
@@ -92,6 +99,13 @@ ShellRoot {
                 root.openPanel();
                 return "ok";
             }
+        }
+
+        Timer {
+            interval: 1000
+            repeat: true
+            running: true
+            onTriggered: root.now = new Date()
         }
 
         Settings { id: cfg }
@@ -274,585 +288,750 @@ ShellRoot {
         }
 
         // ───────── panel ─────────
-        Rectangle {
-            id: panel
-            width: root.panelW
-            y: root.topInset + th.gap
-            height: parent.height - root.topInset - th.gap * 2
-            x: root.open ? th.gap : root.implicitWidth
-            Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-
-            radius: th.radius + 2
-            color: "transparent"
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: root.a(th.accent, 0.30) }
-                GradientStop { position: 0.06; color: root.a(th.cardBot, cfg.panelOpacity) }
-                GradientStop { position: 1.0; color: root.a(th.cardBot, cfg.panelOpacity) }
-            }
-            border.width: 1
-            border.color: root.a(th.dim, 0.28)
+        Item {
+            id: stage
+            anchors.fill: parent
+            anchors.topMargin: root.topInset
+            clip: true
 
             Rectangle {
-                width: parent.width - 90
-                height: 1
-                anchors.top: parent.top
-                anchors.topMargin: 1
-                anchors.horizontalCenter: parent.horizontalCenter
+                id: panel
+                width: root.size
+                height: root.size
+                x: th.gap
+                y: root.open ? th.gap : -height - th.gap
+                opacity: root.open ? 1 : 0
+                Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+
+                radius: th.radius + 2
+                color: "transparent"
                 gradient: Gradient {
-                    orientation: Gradient.Horizontal
-                    GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 0.5; color: root.a(th.accent, 0.85) }
-                    GradientStop { position: 1.0; color: "transparent" }
+                    GradientStop { position: 0.0; color: root.a(th.accent, 0.30) }
+                    GradientStop { position: 0.05; color: root.a(th.cardBot, cfg.panelOpacity) }
+                    GradientStop { position: 1.0; color: root.a(th.cardBot, cfg.panelOpacity) }
                 }
-            }
+                border.width: 1
+                border.color: root.a(th.dim, 0.28)
 
-            Item {
-                id: focusScope
-                anchors.fill: parent
-                focus: root.open
-
-                Keys.onPressed: function (e) {
-                    if (e.key === Qt.Key_Escape) {
-                        if (root.settingsOpen)
-                            root.settingsOpen = false;
-                        else
-                            root.open = false;
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Left && !addIn.activeFocus && !timeIn.activeFocus) {
-                        root.setMonth(root.calYear, root.calMonth - 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_Right && !addIn.activeFocus && !timeIn.activeFocus) {
-                        root.setMonth(root.calYear, root.calMonth + 1);
-                        e.accepted = true;
-                    } else if (e.key === Qt.Key_T && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
-                        root.goToday();
-                        e.accepted = true;
+                Rectangle {
+                    width: parent.width - 90
+                    height: 1
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 0.5; color: root.a(th.accent, 0.85) }
+                        GradientStop { position: 1.0; color: "transparent" }
                     }
                 }
 
-                Flickable {
-                    id: flick
+                Item {
+                    id: focusScope
                     anchors.fill: parent
-                    contentWidth: width
-                    contentHeight: col.height
-                    boundsBehavior: Flickable.StopAtBounds
-                    clip: true
+                    focus: root.open
 
-                    Column {
-                        id: col
-                        x: 18
-                        width: flick.width - 36
-                        spacing: 0
+                    Keys.onPressed: function (e) {
+                        if (e.key === Qt.Key_Escape) {
+                            if (root.settingsOpen)
+                                root.settingsOpen = false;
+                            else
+                                root.open = false;
+                            e.accepted = true;
+                        } else if (e.key === Qt.Key_Left && !addIn.activeFocus && !timeIn.activeFocus) {
+                            root.setMonth(root.calYear, root.calMonth - 1);
+                            e.accepted = true;
+                        } else if (e.key === Qt.Key_Right && !addIn.activeFocus && !timeIn.activeFocus) {
+                            root.setMonth(root.calYear, root.calMonth + 1);
+                            e.accepted = true;
+                        } else if (e.key === Qt.Key_T && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
+                            root.goToday();
+                            e.accepted = true;
+                        }
+                    }
 
-                        // ── header ──
+                    Item {
+                        id: content
+                        anchors.fill: parent
+                        anchors.margins: 18
+
+                        // ── clock, date, stats ──
                         Item {
+                            id: header
                             width: parent.width
-                            height: 62
+                            height: 48
 
-                            Column {
+                            Row {
                                 anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.topMargin: 8
-                                spacing: 1
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 10
 
-                                Row {
-                                    spacing: 7
-                                    Text {
-                                        text: store.monthNames[root.calMonth]
-                                        color: th.bright
-                                        font.family: th.font
-                                        font.pixelSize: 24
-                                        font.bold: true
+                                Rectangle {
+                                    width: 44
+                                    height: 44
+                                    radius: 10
+                                    gradient: Gradient {
+                                        GradientStop { position: 0.0; color: root.a(th.accent, 0.96) }
+                                        GradientStop { position: 1.0; color: root.a(th.accent, 0.42) }
                                     }
-                                    Text {
-                                        anchors.bottom: parent.bottom
-                                        anchors.bottomMargin: 3
-                                        text: root.calYear
-                                        color: th.dim
-                                        font.family: th.font
-                                        font.pixelSize: 12
+                                    border.width: 1
+                                    border.color: root.a(th.accent, 0.6)
+                                    Column {
+                                        anchors.centerIn: parent
+                                        spacing: -1
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: Qt.formatDate(root.now, "d")
+                                            color: th.cardBot
+                                            font.family: th.font
+                                            font.pixelSize: 18
+                                            font.bold: true
+                                        }
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: Qt.formatDate(root.now, "MMM").toUpperCase()
+                                            color: root.a(th.cardBot, 0.75)
+                                            font.family: th.font
+                                            font.pixelSize: 6
+                                            font.letterSpacing: 0.5
+                                        }
                                     }
                                 }
 
-                                Row {
-                                    spacing: 5
-                                    Text {
-                                        text: store.countToday() + " today"
-                                        color: root.a(th.dim, 0.95)
-                                        font.family: th.font
-                                        font.pixelSize: 9
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 0
+                                    Row {
+                                        spacing: 4
+                                        Text {
+                                            id: clockMain
+                                            text: Qt.formatTime(root.now, "HH:mm")
+                                            color: th.bright
+                                            font.family: th.font
+                                            font.pixelSize: 34
+                                            font.bold: true
+                                        }
+                                        Text {
+                                            anchors.bottom: clockMain.bottom
+                                            anchors.bottomMargin: 5
+                                            text: Qt.formatTime(root.now, "ss")
+                                            color: th.accent
+                                            font.family: th.font
+                                            font.pixelSize: 11
+                                        }
                                     }
                                     Text {
-                                        text: "\u00B7  " + store.countMonth(root.calYear, root.calMonth) + " this month"
-                                        color: root.a(th.dim, 0.75)
+                                        text: Qt.formatDate(root.now, "dddd, d MMMM") + "  \u00B7  week " + Qt.formatDate(root.now, "ww")
+                                        color: root.a(th.dim, 0.9)
                                         font.family: th.font
-                                        font.pixelSize: 9
-                                    }
-                                    Text {
-                                        visible: store.countOverdue() > 0
-                                        text: "\u00B7  " + store.countOverdue() + " overdue"
-                                        color: th.accent
-                                        font.family: th.font
-                                        font.pixelSize: 9
+                                        font.pixelSize: 8
                                     }
                                 }
                             }
 
                             Row {
                                 anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.topMargin: 11
-                                spacing: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 5
 
-                                Text {
-                                    text: "today"
-                                    color: todayHover.hovered ? th.accent : th.dim
-                                    font.family: th.font
-                                    font.pixelSize: 9
-                                    HoverHandler { id: todayHover }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        anchors.margins: -4
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.goToday()
-                                    }
+                                StatChip {
+                                    glyph: "\u2713"
+                                    label: store.countToday() + " today"
+                                    tone: store.countToday() > 0 ? th.accent : th.dim
+                                    textColor: store.countToday() > 0 ? th.bright : th.dim
+                                    family: th.font
                                 }
-                                Text {
-                                    text: "\u2039"
-                                    color: prevHover.hovered ? th.bright : th.dim
-                                    font.family: th.font
-                                    font.pixelSize: 18
-                                    HoverHandler { id: prevHover }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        anchors.margins: -5
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.setMonth(root.calYear, root.calMonth - 1)
-                                    }
+                                StatChip {
+                                    glyph: "\u25F7"
+                                    label: store.countMonth(root.calYear, root.calMonth) + " month"
+                                    tone: store.countMonth(root.calYear, root.calMonth) > 0 ? th.accent : th.dim
+                                    textColor: store.countMonth(root.calYear, root.calMonth) > 0 ? th.bright : th.dim
+                                    family: th.font
                                 }
-                                Text {
-                                    text: "\u203A"
-                                    color: nextHover.hovered ? th.bright : th.dim
-                                    font.family: th.font
-                                    font.pixelSize: 18
-                                    HoverHandler { id: nextHover }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        anchors.margins: -5
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.setMonth(root.calYear, root.calMonth + 1)
-                                    }
+                                Item { width: 2; height: 1 }
+                                IconBtn {
+                                    box: 24
+                                    size: 13
+                                    glyph: "\u2699"
+                                    on: root.settingsOpen
+                                    idle: th.dim
+                                    hot: th.accent
+                                    family: th.font
+                                    onClicked: root.settingsOpen = !root.settingsOpen
                                 }
-                                Text {
-                                    text: "\uF013"
-                                    color: gearHover.hovered ? th.accent : th.dim
-                                    font.family: th.font
-                                    font.pixelSize: 11
-                                    HoverHandler { id: gearHover }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        anchors.margins: -5
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.settingsOpen = true
-                                    }
-                                }
-                                Text {
-                                    text: "\u00D7"
-                                    color: closeHover.hovered ? th.accent : th.dim
-                                    font.family: th.font
-                                    font.pixelSize: 13
-                                    HoverHandler { id: closeHover }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        anchors.margins: -5
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.open = false
-                                    }
+                                IconBtn {
+                                    box: 24
+                                    size: 12
+                                    glyph: "\u2715"
+                                    idle: th.dim
+                                    hot: th.accent
+                                    family: th.font
+                                    onClicked: root.open = false
                                 }
                             }
                         }
 
-                        // ── weekday letters ──
-                        Row {
+                        // ── lunar month line ──
+                        MoonLine {
+                            id: moonLine
+                            y: header.height + 8
                             width: parent.width
-                            Repeater {
-                                model: ["S", "M", "T", "W", "T", "F", "S"]
-                                delegate: Text {
-                                    required property string modelData
-                                    width: parent.width / 7
-                                    horizontalAlignment: Text.AlignHCenter
-                                    text: modelData
-                                    color: root.a(th.dim, 0.8)
-                                    font.family: th.font
-                                    font.pixelSize: 9
-                                }
-                            }
-                        }
-
-                        Item { width: 1; height: 5 }
-
-                        CalendarGrid {
-                            width: col.width
-                            store: store
-                            selectedKey: root.selectedKey
-                            year: root.calYear
-                            month: root.calMonth
+                            height: 48
                             accent: th.accent
                             bright: th.bright
                             dim: th.dim
                             cardBg: th.cardBot
                             font: th.font
-                            cellHeight: 62
-                            onDayClicked: function (key) { root.selectedKey = key; }
                         }
 
-                        Item { width: 1; height: 12 }
-
-                        Rectangle {
+                        // ── weather under the lunar line ──
+                        WeatherStrip {
+                            id: weather
+                            y: moonLine.y + moonLine.height + 8
                             width: parent.width
-                            height: 1
-                            color: root.a(th.dim, 0.16)
-                        }
-
-                        // ── selected day ──
-                        Item {
-                            width: parent.width
-                            height: 34
-
-                            Row {
-                                anchors.left: parent.left
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 7
-                                spacing: 7
-                                Text {
-                                    text: store.dayTitle(root.selectedKey)
-                                    color: th.bright
-                                    font.family: th.font
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                }
-                                Text {
-                                    text: store.countOn(root.selectedKey) > 0 ? store.countOn(root.selectedKey) + " due" : "clear"
-                                    color: root.a(th.dim, 0.8)
-                                    font.family: th.font
-                                    font.pixelSize: 9
-                                }
-                            }
-
-                            Text {
-                                anchors.right: parent.right
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 7
-                                text: "open todo \u2197"
-                                color: openHover.hovered ? th.accent : root.a(th.dim, 0.8)
-                                font.family: th.font
-                                font.pixelSize: 9
-                                HoverHandler { id: openHover }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    anchors.margins: -4
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.openTodo()
-                                }
-                            }
-                        }
-
-                        // empty state
-                        Item {
-                            width: parent.width
-                            height: store.countOn(root.selectedKey) === 0 ? 34 : 0
-                            Text {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Nothing due. A good day."
-                                color: root.a(th.dim, 0.7)
-                                font.family: th.font
-                                font.pixelSize: 10
-                            }
-                        }
-
-                        Repeater {
-                            model: store.tasksOn(root.selectedKey)
-                            delegate: Item {
-                                id: agRow
-                                required property var modelData
-                                readonly property var task: modelData
-                                readonly property bool overdue: !task.done && task.due < Date.now()
-
-                                width: col.width
-                                height: 30
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    anchors.margins: 1
-                                    radius: 5
-                                    color: agHover.hovered ? root.a(th.dim, 0.06) : "transparent"
-                                }
-
-                                Rectangle {
-                                    x: 2
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 14
-                                    height: 14
-                                    radius: 7
-                                    color: agRow.task.done ? root.a(th.accent, 0.85) : "transparent"
-                                    border.width: 1
-                                    border.color: agRow.task.done ? th.accent
-                                        : agRow.overdue ? th.accent : root.a(th.dim, 0.55)
-                                    Text {
-                                        anchors.centerIn: parent
-                                        visible: agRow.task.done
-                                        text: "\u2713"
-                                        color: th.cardBot
-                                        font.family: th.font
-                                        font.pixelSize: 8
-                                        font.bold: true
-                                    }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        anchors.margins: -5
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.toggleTask(agRow.task.ord)
-                                    }
-                                }
-
-                                Text {
-                                    x: 26
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 44
-                                    text: store.isDateOnly(agRow.task.due) ? "all day" : store.timeLabel(agRow.task.due)
-                                    color: agRow.task.done ? root.a(th.dim, 0.55)
-                                        : agRow.overdue ? th.accent : root.a(th.dim, 0.9)
-                                    font.family: th.font
-                                    font.pixelSize: 9
-                                }
-
-                                Text {
-                                    x: 74
-                                    width: parent.width - 80
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: agRow.task.text
-                                    color: agRow.task.done ? root.a(th.dim, 0.55) : th.bright
-                                    elide: Text.ElideRight
-                                    font.family: th.font
-                                    font.pixelSize: 10
-                                    font.strikeout: agRow.task.done
-                                }
-
-                                HoverHandler { id: agHover }
-
-                                MouseArea {
-                                    x: 74
-                                    y: 0
-                                    width: parent.width - 74
-                                    height: parent.height
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.openTodo()
-                                }
-                            }
-                        }
-
-                        // ── quick add ──
-                        Item { width: 1; height: 8 }
-
-                        Rectangle {
-                            width: parent.width
-                            height: 34
-                            radius: 6
-                            color: root.a(th.dim, 0.06)
-                            border.width: 1
-                            border.color: addIn.activeFocus || timeIn.activeFocus ? root.a(th.accent, 0.55) : root.a(th.dim, 0.16)
-
-                            Text {
-                                x: 9
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "+"
-                                color: th.accent
-                                font.family: th.font
-                                font.pixelSize: 15
-                            }
-
-                            TextInput {
-                                id: addIn
-                                x: 26
-                                width: parent.width - 26 - 58 - 8
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: th.bright
-                                selectionColor: root.a(th.accent, 0.45)
-                                selectedTextColor: th.bright
-                                font.family: th.font
-                                font.pixelSize: 10
-                                clip: true
-                                onAccepted: root.addTask()
-                            }
-                            Text {
-                                x: 26
-                                width: addIn.width
-                                anchors.verticalCenter: parent.verticalCenter
-                                visible: addIn.text === ""
-                                text: "add a task for " + store.dayTitle(root.selectedKey).toLowerCase() + "\u2026"
-                                color: root.a(th.dim, 0.65)
-                                elide: Text.ElideRight
-                                font.family: th.font
-                                font.pixelSize: 10
-                            }
-
-                            TextInput {
-                                id: timeIn
-                                width: 48
-                                anchors.right: parent.right
-                                anchors.rightMargin: 8
-                                anchors.verticalCenter: parent.verticalCenter
-                                horizontalAlignment: TextInput.AlignHCenter
-                                color: th.bright
-                                selectionColor: root.a(th.accent, 0.45)
-                                selectedTextColor: th.bright
-                                font.family: th.font
-                                font.pixelSize: 9
-                                clip: true
-                                onAccepted: root.addTask()
-                            }
-                            Text {
-                                anchors.right: parent.right
-                                anchors.rightMargin: 8
-                                width: 48
-                                anchors.verticalCenter: parent.verticalCenter
-                                horizontalAlignment: Text.AlignHCenter
-                                visible: timeIn.text === ""
-                                text: "18:00"
-                                color: root.a(th.dim, 0.55)
-                                font.family: th.font
-                                font.pixelSize: 9
-                            }
-
-                            Rectangle {
-                                anchors.right: timeIn.left
-                                anchors.rightMargin: 4
-                                width: 1
-                                height: 14
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: root.a(th.dim, 0.18)
-                            }
-                        }
-
-                        Text {
-                            width: parent.width
-                            text: "Enter adds it to the todo list with that date and time \u00B7 leave the time empty for all day"
-                            color: root.a(th.dim, 0.55)
-                            font.family: th.font
-                            font.pixelSize: 8
-                            wrapMode: Text.WordWrap
-                        }
-
-                        Item { width: 1; height: 14 }
-
-                        Rectangle {
-                            width: parent.width
-                            height: 1
-                            color: root.a(th.dim, 0.16)
-                        }
-
-                        Item { width: 1; height: 10 }
-
-                        // ── moon / clock / weather ──
-                        Tray {
-                            width: col.width
-                            cfg: cfg
+                            height: 36
                             wx: wx
                             accent: th.accent
                             bright: th.bright
                             dim: th.dim
                             font: th.font
+                            onClicked: root.settingsOpen = true
                         }
 
-                        Item { width: 1; height: 12 }
-
-                        // ── gif ──
+                        // ── month + selected-day tasks ──
                         Item {
+                            id: body
+                            y: weather.y + weather.height + 12
                             width: parent.width
-                            height: 140
+                            height: parent.height - y
 
-                            Item {
-                                id: gifFrame
+                            readonly property real leftW: Math.round(width * 0.55)
+                            readonly property real rightW: width - leftW - 12
+                            readonly property real gifSize: Math.max(56, Math.min(96, height - 260))
+
+                            Row {
                                 anchors.fill: parent
-                                visible: false
-                                AnimatedImage {
-                                    anchors.fill: parent
-                                    source: root.gifUrl()
-                                    fillMode: Image.PreserveAspectCrop
-                                    asynchronous: true
-                                    smooth: true
-                                    playing: root.open
-                                    cache: false
-                                    sourceSize.width: gifFrame.width * 2
-                                    sourceSize.height: gifFrame.height * 2
+                                spacing: 12
+
+                                Item {
+                                    width: body.leftW
+                                    height: parent.height
+
+                                    Rectangle {
+                                        id: monthCard
+                                        width: parent.width
+                                        height: 250
+                                        radius: th.radius
+                                        color: root.a(th.dim, 0.035)
+                                        border.width: 1
+                                        border.color: root.a(th.dim, 0.12)
+
+                                        Item {
+                                            id: monthHead
+                                            x: 8
+                                            y: 6
+                                            width: parent.width - 16
+                                            height: 20
+
+                                            Text {
+                                                id: monthLabel
+                                                anchors.left: parent.left
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: store.monthNames[root.calMonth]
+                                                color: th.bright
+                                                font.family: th.font
+                                                font.pixelSize: 12
+                                                font.bold: true
+                                            }
+                                            Text {
+                                                anchors.left: monthLabel.right
+                                                anchors.leftMargin: 4
+                                                anchors.baseline: monthLabel.baseline
+                                                text: root.calYear
+                                                color: root.a(th.dim, 0.8)
+                                                font.family: th.font
+                                                font.pixelSize: 8
+                                            }
+
+                                            Row {
+                                                anchors.right: parent.right
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                spacing: 2
+
+                                                Rectangle {
+                                                    width: 32
+                                                    height: 16
+                                                    radius: 4
+                                                    color: todayMa.containsMouse ? root.a(th.accent, 0.14) : root.a(th.dim, 0.05)
+                                                    border.width: 1
+                                                    border.color: todayMa.containsMouse ? th.accent : root.a(th.dim, 0.18)
+                                                    Text {
+                                                        anchors.centerIn: parent
+                                                        text: "today"
+                                                        color: todayMa.containsMouse ? th.accent : root.a(th.dim, 0.9)
+                                                        font.family: th.font
+                                                        font.pixelSize: 7
+                                                    }
+                                                    MouseArea {
+                                                        id: todayMa
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: root.goToday()
+                                                    }
+                                                }
+                                                IconBtn {
+                                                    box: 18
+                                                    size: 12
+                                                    glyph: "\u2039"
+                                                    idle: th.dim
+                                                    hot: th.accent
+                                                    family: th.font
+                                                    onClicked: root.setMonth(root.calYear, root.calMonth - 1)
+                                                }
+                                                IconBtn {
+                                                    box: 18
+                                                    size: 12
+                                                    glyph: "\u203A"
+                                                    idle: th.dim
+                                                    hot: th.accent
+                                                    family: th.font
+                                                    onClicked: root.setMonth(root.calYear, root.calMonth + 1)
+                                                }
+                                            }
+                                        }
+
+                                        Row {
+                                            x: 8
+                                            y: 27
+                                            width: parent.width - 16
+                                            height: 9
+
+                                            Repeater {
+                                                model: ["S", "M", "T", "W", "T", "F", "S"]
+                                                delegate: Item {
+                                                    required property string modelData
+                                                    width: parent.width / 7
+                                                    height: 9
+                                                    Text {
+                                                        anchors.centerIn: parent
+                                                        text: modelData
+                                                        color: root.a(th.dim, 0.72)
+                                                        font.family: th.font
+                                                        font.pixelSize: 7
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        CalendarGrid {
+                                            x: 8
+                                            y: 37
+                                            width: parent.width - 16
+                                            height: 209
+                                            store: store
+                                            selectedKey: root.selectedKey
+                                            year: root.calYear
+                                            month: root.calMonth
+                                            accent: th.accent
+                                            bright: th.bright
+                                            dim: th.dim
+                                            cardBg: th.cardBot
+                                            font: th.font
+                                            cellHeight: 34
+                                            onDayClicked: function (key) { root.selectedKey = key }
+                                        }
+                                    }
+
+                                    Item {
+                                        y: monthCard.height + 10
+                                        width: parent.width
+                                        height: body.gifSize
+
+                                        Rectangle {
+                                            id: gifCard
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            width: body.gifSize
+                                            height: body.gifSize
+                                            radius: th.radius
+                                            color: root.a(th.dim, 0.035)
+                                            border.width: 1
+                                            border.color: root.a(th.dim, 0.12)
+                                            clip: true
+
+                                            Item {
+                                                id: gifFrame
+                                                anchors.fill: parent
+                                                anchors.margins: 1
+                                                visible: false
+                                                AnimatedImage {
+                                                    anchors.fill: parent
+                                                    source: root.gifUrl()
+                                                    fillMode: Image.PreserveAspectCrop
+                                                    asynchronous: true
+                                                    smooth: true
+                                                    playing: root.open
+                                                    cache: false
+                                                    sourceSize.width: gifFrame.width * 2
+                                                    sourceSize.height: gifFrame.height * 2
+                                                }
+                                            }
+
+                                            Item {
+                                                id: gifMask
+                                                anchors.fill: parent
+                                                anchors.margins: 1
+                                                layer.enabled: true
+                                                visible: false
+                                                Rectangle {
+                                                    anchors.fill: parent
+                                                    radius: 8
+                                                    color: "black"
+                                                }
+                                            }
+
+                                            MultiEffect {
+                                                anchors.fill: parent
+                                                anchors.margins: 1
+                                                source: gifFrame
+                                                maskEnabled: true
+                                                maskSource: gifMask
+                                                visible: cfg.gif !== ""
+                                                opacity: 0.95
+                                            }
+
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                visible: cfg.gif === ""
+                                                radius: th.radius
+                                                color: root.a(th.dim, 0.04)
+                                                border.width: 1
+                                                border.color: root.a(th.dim, 0.14)
+
+                                                Column {
+                                                    anchors.centerIn: parent
+                                                    spacing: 3
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: "\u2727"
+                                                        color: root.a(th.accent, 0.55)
+                                                        font.family: th.font
+                                                        font.pixelSize: 20
+                                                    }
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: "gif"
+                                                        color: root.a(th.dim, 0.7)
+                                                        font.family: th.font
+                                                        font.pixelSize: 8
+                                                    }
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: "click to set"
+                                                        color: root.a(th.dim, 0.45)
+                                                        font.family: th.font
+                                                        font.pixelSize: 7
+                                                    }
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.settingsOpen = true
+                                            }
+                                        }
+                                    }
                                 }
-                            }
 
-                            Item {
-                                id: gifMask
-                                anchors.fill: parent
-                                layer.enabled: true
-                                visible: false
                                 Rectangle {
-                                    anchors.fill: parent
-                                    radius: 10
-                                    color: "black"
-                                }
-                            }
+                                    id: taskCard
+                                    width: body.rightW
+                                    height: parent.height
+                                    radius: th.radius
+                                    color: root.a(th.dim, 0.035)
+                                    border.width: 1
+                                    border.color: root.a(th.dim, 0.12)
 
-                            MultiEffect {
-                                anchors.fill: parent
-                                source: gifFrame
-                                maskEnabled: true
-                                maskSource: gifMask
-                                visible: cfg.gif !== ""
-                                opacity: 0.94
-                            }
+                                    readonly property int taskCount: store.countOn(root.selectedKey)
 
-                            Rectangle {
-                                anchors.fill: parent
-                                visible: cfg.gif === ""
-                                radius: 10
-                                color: root.a(th.dim, 0.05)
-                                border.width: 1
-                                border.color: root.a(th.dim, 0.14)
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: root.a(th.accent, 0.06) }
-                                    GradientStop { position: 1.0; color: "transparent" }
-                                }
+                                    Item {
+                                        id: taskHead
+                                        x: 10
+                                        y: 8
+                                        width: parent.width - 20
+                                        height: 28
 
-                                Column {
-                                    anchors.centerIn: parent
-                                    spacing: 4
-                                    Text {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: "\u2727"
-                                        color: root.a(th.accent, 0.55)
-                                        font.family: th.font
-                                        font.pixelSize: 24
+                                        Column {
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            spacing: 0
+                                            Text {
+                                                text: store.dayTitle(root.selectedKey)
+                                                color: root.selectedKey === store.todayKey() ? th.accent : th.bright
+                                                font.family: th.font
+                                                font.pixelSize: 13
+                                                font.bold: true
+                                            }
+                                            Text {
+                                                text: taskCard.taskCount + (taskCard.taskCount === 1 ? " task" : " tasks")
+                                                color: root.a(th.dim, 0.8)
+                                                font.family: th.font
+                                                font.pixelSize: 8
+                                            }
+                                        }
+
+                                        Text {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "open todo \u2197"
+                                            color: openHover.hovered ? th.accent : root.a(th.dim, 0.8)
+                                            font.family: th.font
+                                            font.pixelSize: 8
+                                            HoverHandler { id: openHover }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                anchors.margins: -4
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.openTodo()
+                                            }
+                                        }
                                     }
-                                    Text {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: "gif slot \u00B7 click to set one"
-                                        color: root.a(th.dim, 0.65)
-                                        font.family: th.font
-                                        font.pixelSize: 9
+
+                                    Rectangle {
+                                        x: 10
+                                        y: 40
+                                        width: parent.width - 20
+                                        height: 1
+                                        color: root.a(th.dim, 0.12)
                                     }
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.settingsOpen = true
+
+                                    Flickable {
+                                        id: taskFlick
+                                        x: 10
+                                        y: 46
+                                        width: parent.width - 20
+                                        height: parent.height - 46 - 60
+                                        contentWidth: width
+                                        contentHeight: taskCol.height
+                                        boundsBehavior: Flickable.StopAtBounds
+                                        clip: true
+
+                                        Column {
+                                            id: taskCol
+                                            width: taskFlick.width
+                                            spacing: 2
+
+                                            Item {
+                                                visible: taskCard.taskCount === 0
+                                                width: taskCol.width
+                                                height: 150
+                                                Column {
+                                                    anchors.centerIn: parent
+                                                    spacing: 4
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: "\u263E"
+                                                        color: root.a(th.accent, 0.55)
+                                                        font.family: th.font
+                                                        font.pixelSize: 22
+                                                    }
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: "nothing due"
+                                                        color: root.a(th.dim, 0.75)
+                                                        font.family: th.font
+                                                        font.pixelSize: 9
+                                                    }
+                                                    Text {
+                                                        anchors.horizontalCenter: parent.horizontalCenter
+                                                        text: "a good day."
+                                                        color: root.a(th.dim, 0.45)
+                                                        font.family: th.font
+                                                        font.pixelSize: 7
+                                                    }
+                                                }
+                                            }
+
+                                            Repeater {
+                                                model: store.tasksOn(root.selectedKey)
+                                                delegate: Item {
+                                                    id: taskRow
+                                                    required property var modelData
+                                                    readonly property var task: modelData
+                                                    readonly property bool overdue: !task.done && task.due < Date.now()
+
+                                                    width: taskCol.width
+                                                    height: 34
+
+                                                    Rectangle {
+                                                        anchors.fill: parent
+                                                        anchors.margins: 1
+                                                        radius: 5
+                                                        color: rowHover.hovered ? root.a(th.dim, 0.06) : "transparent"
+                                                    }
+
+                                                    Rectangle {
+                                                        x: 2
+                                                        y: 10
+                                                        width: 14
+                                                        height: 14
+                                                        radius: 7
+                                                        color: taskRow.task.done ? root.a(th.accent, 0.85) : "transparent"
+                                                        border.width: 1
+                                                        border.color: taskRow.task.done ? th.accent
+                                                            : taskRow.overdue ? th.accent : root.a(th.dim, 0.55)
+                                                        Text {
+                                                            anchors.centerIn: parent
+                                                            visible: taskRow.task.done
+                                                            text: "\u2713"
+                                                            color: th.cardBot
+                                                            font.family: th.font
+                                                            font.pixelSize: 8
+                                                            font.bold: true
+                                                        }
+                                                        MouseArea {
+                                                            anchors.fill: parent
+                                                            anchors.margins: -5
+                                                            cursorShape: Qt.PointingHandCursor
+                                                            onClicked: root.toggleTask(taskRow.task.ord)
+                                                        }
+                                                    }
+
+                                                    Text {
+                                                        x: 24
+                                                        y: 3
+                                                        width: parent.width - 28
+                                                        text: taskRow.task.text
+                                                        color: taskRow.task.done ? root.a(th.dim, 0.5) : th.bright
+                                                        elide: Text.ElideRight
+                                                        font.family: th.font
+                                                        font.pixelSize: 10
+                                                        font.strikeout: taskRow.task.done
+                                                    }
+                                                    Text {
+                                                        x: 24
+                                                        y: 19
+                                                        width: parent.width - 28
+                                                        text: store.isDateOnly(taskRow.task.due) ? "all day" : store.timeLabel(taskRow.task.due)
+                                                        color: taskRow.task.done ? root.a(th.dim, 0.4)
+                                                            : taskRow.overdue ? th.accent : root.a(th.dim, 0.8)
+                                                        elide: Text.ElideRight
+                                                        font.family: th.font
+                                                        font.pixelSize: 8
+                                                    }
+
+                                                    HoverHandler { id: rowHover }
+
+                                                    MouseArea {
+                                                        x: 24
+                                                        y: 0
+                                                        width: parent.width - 24
+                                                        height: parent.height
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: root.openTodo()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        id: addBox
+                                        x: 10
+                                        y: parent.height - 54
+                                        width: parent.width - 20
+                                        height: 34
+                                        radius: 7
+                                        color: root.a(th.dim, 0.06)
+                                        border.width: 1
+                                        border.color: (addIn.activeFocus || timeIn.activeFocus)
+                                            ? th.accent : root.a(th.dim, 0.18)
+
+                                        Text {
+                                            x: 9
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "+"
+                                            color: th.accent
+                                            font.family: th.font
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                        }
+                                        TextInput {
+                                            id: addIn
+                                            x: 24
+                                            width: parent.width - 24 - 42 - 8
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            color: th.bright
+                                            selectionColor: root.a(th.accent, 0.45)
+                                            selectedTextColor: th.bright
+                                            font.family: th.font
+                                            font.pixelSize: 9
+                                            clip: true
+                                            onAccepted: root.addTask()
+                                        }
+                                        Text {
+                                            x: 24
+                                            width: addIn.width
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            visible: addIn.text === ""
+                                            text: "add a task\u2026"
+                                            color: root.a(th.dim, 0.55)
+                                            elide: Text.ElideRight
+                                            font.family: th.font
+                                            font.pixelSize: 9
+                                        }
+                                        Rectangle {
+                                            x: timeIn.x - 5
+                                            width: 1
+                                            height: 16
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            color: root.a(th.dim, 0.18)
+                                        }
+                                        TextInput {
+                                            id: timeIn
+                                            width: 34
+                                            anchors.right: parent.right
+                                            anchors.rightMargin: 8
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            horizontalAlignment: TextInput.AlignHCenter
+                                            color: th.bright
+                                            selectionColor: root.a(th.accent, 0.45)
+                                            selectedTextColor: th.bright
+                                            font.family: th.font
+                                            font.pixelSize: 8
+                                            clip: true
+                                            onAccepted: root.addTask()
+                                        }
+                                        Text {
+                                            width: timeIn.width
+                                            anchors.right: parent.right
+                                            anchors.rightMargin: 8
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            horizontalAlignment: Text.AlignHCenter
+                                            visible: timeIn.text === ""
+                                            text: "18:00"
+                                            color: root.a(th.dim, 0.55)
+                                            font.family: th.font
+                                            font.pixelSize: 8
+                                        }
+                                    }
+
+                                    Text {
+                                        x: 10
+                                        y: parent.height - 16
+                                        text: "time empty = all day"
+                                        color: root.a(th.dim, 0.5)
+                                        font.family: th.font
+                                        font.pixelSize: 7
+                                    }
                                 }
                             }
                         }
-
-                        Item { width: 1; height: 18 }
                     }
                 }
-            }
-
             // ── settings card ──
             Rectangle {
                 id: settingsCard
@@ -1073,6 +1252,7 @@ ShellRoot {
                         cityIn.text = cfg.city;
                     }
                 }
+            }
             }
         }
     }
