@@ -1,0 +1,8 @@
+{
+ "vaultPath": "",
+ "autoLockMinutes": 60,
+ "lockOnClose": false,
+ "lastSection": "Us",
+ "specialSecret": true,
+ "specialRevealed": false
+}

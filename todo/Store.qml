@@ -470,6 +470,25 @@ Scope {
         return true;
     }
 
+    // Used by other widgets (the calendar) through IPC: a plain title and an
+    // exact due timestamp. 0 means no due date.
+    function addAt(text, due) {
+        text = String(text).trim();
+        if (text === "")
+            return false;
+        var ms = Number(due) || 0;
+        var arr = _clone();
+        var id = nextOrd;
+        nextOrd += 1;
+        arr.push({
+            text: text, quad: ms > 0 ? quadForDue(ms) : 2, done: false, ord: id, pos: _maxPos(arr) + 1,
+            due: ms, repeat: "", note: "", subs: [], tags: [], pomos: 0,
+            doneAt: 0, created: Date.now(), stage: 0, reminded: false, snooze: 0, focusMs: 0
+        });
+        _apply(arr, true);
+        return true;
+    }
+
     function _step(d, rep) {
         if (rep === "daily") {
             d.setDate(d.getDate() + 1);

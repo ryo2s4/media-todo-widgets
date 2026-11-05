@@ -70,6 +70,13 @@ ShellRoot {
             function menu(): void { root.menuOpen = !root.menuOpen; root.openPanel(); }
             function sheets(): void { root.closeSheets(); root.settingsOpen = false; }
             function settings(): void { root.closeSheets(); root.settingsOpen = true; root.openPanel(); }
+            function addTask(text: string, due: string): string {
+                return store.addAt(text, Number(due)) ? "ok" : "invalid";
+            }
+            function toggleTask(id: string): string {
+                store.toggleDone(Number(id));
+                return "ok";
+            }
             function importNow(): void { store.importFromPath(store.importPath); }
         }
 

@@ -1,136 +1,208 @@
 #!/usr/bin/env bash
 set -e
 
+# One-shot installer for the media, todo and calendar Quickshell widgets.
+# Works either from a local clone (bash install.sh) or by piping the raw file.
+
 REPO="https://github.com/ryo2s4/media-todo-widgets.git"
 INSTALL_DIR="$HOME/.config/quickshell"
 BIN_DIR="$HOME/.local/bin"
 HYPR_USER="$HOME/.config/hypr/user.lua"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-echo "=== Media + Todo Installer ==="
+echo "=== media + todo + calendar widgets ==="
 echo ""
 
-# Install dependencies
-echo "[*] Installing dependencies..."
-if command -v pacman >/dev/null 2>&1; then
-    sudo pacman -S --needed --noconfirm quickshell-git gpg zenity yad kdialog wmctrl 2>/dev/null || sudo pacman -S --needed --noconfirm quickshell gpg zenity yad kdialog wmctrl 2>/dev/null || true
-elif command -v apt >/dev/null 2>&1; then
-    sudo apt install -y quickshell gnupg zenity yad kdialog wmctrl 2>/dev/null || true
-elif command -v dnf >/dev/null 2>&1; then
-    sudo dnf install -y quickshell gnupg2 zenity yad kdialog wmctrl 2>/dev/null || true
+# ── dependencies ─────────────────────────────────────────────────────────────
+echo "[*] Checking dependencies..."
+need=()
+for c in qs git curl; do
+    command -v "$c" >/dev/null 2>&1 || need+=("$c")
+done
+if [ ${#need[@]} -gt 0 ]; then
+    echo "[*] Missing: ${need[*]} (trying to install)"
+    if command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --needed --noconfirm quickshell-git curl gpg zenity yad kdialog wmctrl 2>/dev/null \
+            || sudo pacman -S --needed --noconfirm quickshell curl gpg zenity yad kdialog wmctrl 2>/dev/null \
+            || true
+    elif command -v apt >/dev/null 2>&1; then
+        sudo apt update 2>/dev/null || true
+        sudo apt install -y quickshell curl gnupg zenity yad kdialog wmctrl 2>/dev/null || true
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y quickshell curl gnupg2 zenity yad kdialog wmctrl 2>/dev/null || true
+    fi
+fi
+if ! command -v qs >/dev/null 2>&1; then
+    echo "[!] quickshell (qs) is still missing. Install it, then run this again."
+    exit 1
 fi
 
-# Create dirs
 mkdir -p "$INSTALL_DIR" "$BIN_DIR"
 
-# Clone or update repo
-TMP_DIR=$(mktemp -d)
-echo "[*] Downloading from $REPO..."
-if git clone --depth 1 "$REPO" "$TMP_DIR/repo" 2>/dev/null; then
-    echo "[*] Cloned successfully"
-else
-    echo "[!] Failed to clone repo, trying to use local copy..."
-    cp -r "$HOME/.config/quickshell/todo" "$TMP_DIR/repo/todo" 2>/dev/null || true
-    cp -r "$HOME/.config/quickshell/media" "$TMP_DIR/repo/media" 2>/dev/null || true
+# ── source tree ──────────────────────────────────────────────────────────────
+SRC_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+    HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)"
+    if [ -n "$HERE" ] && [ -d "$HERE/todo" ] && [ -d "$HERE/media" ] && [ -d "$HERE/calendar" ]; then
+        SRC_DIR="$HERE"
+    fi
 fi
-
-# Install todo
-if [ -d "$TMP_DIR/repo/todo" ]; then
-    echo "[*] Installing todo..."
-    rm -rf "$INSTALL_DIR/todo"
-    cp -r "$TMP_DIR/repo/todo" "$INSTALL_DIR/todo"
+if [ -z "$SRC_DIR" ]; then
+    echo "[*] Downloading from $REPO..."
+    if git clone --depth 1 "$REPO" "$TMP_DIR/repo" 2>/dev/null; then
+        SRC_DIR="$TMP_DIR/repo"
+    else
+        echo "[!] Could not clone the repo."
+        exit 1
+    fi
 fi
+echo "[*] Using files from $SRC_DIR"
 
-# Install media
-if [ -d "$TMP_DIR/repo/media" ]; then
-    echo "[*] Installing media..."
-    rm -rf "$INSTALL_DIR/media"
-    cp -r "$TMP_DIR/repo/media" "$INSTALL_DIR/media"
-    # Remove git history
-    rm -rf "$INSTALL_DIR/media/.git"
-fi
+# ── install one widget without touching its data ─────────────────────────────
+install_widget() {
+    local name="$1"
+    local src="$SRC_DIR/$name"
+    local dst="$INSTALL_DIR/$name"
+    [ -d "$src" ] || return 0
 
-rm -rf "$TMP_DIR"
+    echo "[*] Installing $name..."
+    mkdir -p "$dst"
+    local keep="$TMP_DIR/keep-$name"
+    mkdir -p "$keep"
 
-# Install media-toggle script
-echo "[*] Installing media-toggle..."
+    # preserve anything the widget has written for this user
+    local f
+    for f in tasks.json state.json status.json settings.json special.json \
+             library.json notifs.json weather.json; do
+        [ -f "$dst/$f" ] && cp -a "$dst/$f" "$keep/$f"
+    done
+    [ -d "$dst/backups" ] && cp -a "$dst/backups" "$keep/backups"
+
+    cp -a "$src/." "$dst/"
+
+    for f in tasks.json state.json status.json settings.json special.json \
+             library.json notifs.json weather.json; do
+        [ -f "$keep/$f" ] && cp -a "$keep/$f" "$dst/$f"
+    done
+    if [ -d "$keep/backups" ]; then
+        mkdir -p "$dst/backups"
+        cp -a "$keep/backups/." "$dst/backups/"
+    fi
+}
+
+install_widget todo
+install_widget media
+install_widget calendar
+
+# ── launchers ────────────────────────────────────────────────────────────────
+echo "[*] Installing launchers..."
 cat > "$BIN_DIR/media-toggle" << 'EOF'
 #!/usr/bin/env bash
-# kill any stuck instances
-pkill -f "qs -c media" 2>/dev/null
-sleep 0.3
-# start fresh if not running
-if ! pgrep -f "qs -c media" >/dev/null 2>&1; then
-  qs -c media >/dev/null 2>&1 &
-  sleep 1
+if ! pgrep -f '^qs -c media' >/dev/null 2>&1; then
+    qs -c media >/dev/null 2>&1 &
+    sleep 0.8
 fi
-# toggle
 qs -c media ipc call media toggle >/dev/null 2>&1
 EOF
-chmod +x "$BIN_DIR/media-toggle"
-
-# Add to PATH if not present
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc" 2>/dev/null || true
+cat > "$BIN_DIR/calendar-toggle" << 'EOF'
+#!/usr/bin/env bash
+if ! pgrep -f '^qs -c calendar' >/dev/null 2>&1; then
+    qs -c calendar >/dev/null 2>&1 &
+    sleep 0.8
 fi
+qs -c calendar ipc call calendar toggle >/dev/null 2>&1
+EOF
+chmod +x "$BIN_DIR/media-toggle" "$BIN_DIR/calendar-toggle"
 
-# Setup Hyprland keybinds
-echo "[*] Setting up Hyprland keybinds..."
+# ── Hyprland startup + keybinds ──────────────────────────────────────────────
+echo "[*] Setting up Hyprland startup and keybinds..."
 mkdir -p "$(dirname "$HYPR_USER")"
-
-# Create or append to user.lua
 if [ ! -f "$HYPR_USER" ]; then
     cat > "$HYPR_USER" << 'EOF'
+-- Ryoku user overrides (loaded last). Edit freely; survives updates.
 local hl = require("hyprland")
 
--- Auto-start todo and media
+-- media + todo + calendar
 hl.on("hyprland.start", function()
     hl.exec_cmd("qs -c todo &")
     hl.exec_cmd("qs -c media &")
+    hl.exec_cmd("qs -c calendar &")
 end)
-
--- Keybinds
 hl.bind("SUPER + S", hl.dsp.exec_cmd("qs -c todo ipc call todo toggle"))
 hl.bind("SUPER + M", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-toggle"))
 hl.bind("SUPER + G", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-toggle"))
+hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/calendar-toggle"))
 EOF
-    echo "[*] Created $HYPR_USER with keybinds"
 else
-    # Check if keybinds already exist
-    if ! grep -q "qs -c todo ipc call todo toggle" "$HYPR_USER"; then
+    add_block=0
+    startup_lines=""
+    for w in todo media calendar; do
+        if ! grep -q "qs -c $w &" "$HYPR_USER"; then
+            startup_lines="${startup_lines}    hl.exec_cmd(\"qs -c $w &\")\n"
+        fi
+    done
+    if [ -n "$startup_lines" ]; then
+        {
+            echo ""
+            echo "-- widget startup (added by the installer)"
+            echo 'local hl = require("hyprland")'
+            echo 'hl.on("hyprland.start", function()'
+            printf '%b' "$startup_lines"
+            echo 'end)'
+        } >> "$HYPR_USER"
+        add_block=1
+    fi
+    if ! grep -q 'SUPER + S' "$HYPR_USER"; then
         cat >> "$HYPR_USER" << 'EOF'
-
--- Media + Todo keybinds (added by installer)
-local hl = require("hyprland")
 hl.bind("SUPER + S", hl.dsp.exec_cmd("qs -c todo ipc call todo toggle"))
+EOF
+        add_block=1
+    fi
+    if ! grep -q 'SUPER + M' "$HYPR_USER"; then
+        cat >> "$HYPR_USER" << 'EOF'
 hl.bind("SUPER + M", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-toggle"))
+EOF
+        add_block=1
+    fi
+    if ! grep -q 'SUPER + G' "$HYPR_USER"; then
+        cat >> "$HYPR_USER" << 'EOF'
 hl.bind("SUPER + G", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-toggle"))
 EOF
-        echo "[*] Added keybinds to existing $HYPR_USER"
+        add_block=1
+    fi
+    if ! grep -q 'SUPER + ALT + C' "$HYPR_USER"; then
+        cat >> "$HYPR_USER" << 'EOF'
+hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/calendar-toggle"))
+EOF
+        add_block=1
+    fi
+    if [ "$add_block" = 1 ]; then
+        echo "[*] Added the missing startup/keybinds to $HYPR_USER"
     else
-        echo "[*] Keybinds already present"
+        echo "[*] Startup and keybinds already present"
     fi
 fi
 
-# Start services
+# ── start fresh ──────────────────────────────────────────────────────────────
 echo "[*] Starting services..."
-pkill -f "qs -c todo" 2>/dev/null || true
-pkill -f "qs -c media" 2>/dev/null || true
+pkill -f '^qs -c todo' 2>/dev/null || true
+pkill -f '^qs -c media' 2>/dev/null || true
+pkill -f '^qs -c calendar' 2>/dev/null || true
 sleep 1
-qs -c todo >/dev/null 2>&1 &
-qs -c media >/dev/null 2>&1 &
+nohup qs -c todo >/dev/null 2>&1 &
+nohup qs -c media >/dev/null 2>&1 &
+nohup qs -c calendar >/dev/null 2>&1 &
+sleep 1
 
 echo ""
-echo "=== Installation Complete ==="
+echo "=== Done ==="
 echo ""
-echo "Keybinds:"
-echo "  SUPER + S  -> Toggle Todo"
-echo "  SUPER + M  -> Toggle Media"
-echo "  SUPER + G  -> Toggle Media"
+echo "  SUPER + S        todo"
+echo "  SUPER + M / G    media"
+echo "  SUPER + ALT + C  calendar"
 echo ""
-echo "Configs installed to:"
-echo "  $INSTALL_DIR/todo"
-echo "  $INSTALL_DIR/media"
+echo "Configs: $INSTALL_DIR/{todo,media,calendar}"
+echo "Launchers: $BIN_DIR/{media,calendar}-toggle"
 echo ""
-echo "Media toggle script: $BIN_DIR/media-toggle"
-echo ""
+echo "If Hyprland does not see the new binds yet, run: hyprctl reload"
