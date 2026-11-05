@@ -21,7 +21,7 @@ ShellRoot {
         readonly property int designSize: 560
         readonly property int size: {
             var cap = 900;
-            if (root.screen && root.screen.height > 0) {
+            if (root.screen && root.screen.height > 0 && root.screen.width > 0) {
                 cap = Math.min(cap, root.screen.height - topInset - 24);
                 cap = Math.min(cap, root.screen.width - 24);
             }
