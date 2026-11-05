@@ -42,8 +42,8 @@ The installer binds `SUPER + ALT + C` to `~/.local/bin/calendar-toggle`.
   `all day`). The list scrolls when it fills. The quick-add row at the bottom
   sends a task to the todo panel for the selected day. Type a title, optionally
   a time (`18:00`), press Enter. Leave the time empty for an all-day task.
-- **Gif**: one square 96 px tile under the month, aspect-cropped rather than
-  stretched. Click it to set a path in Settings.
+- **Gif**: one square tile under the month, aspect-cropped rather than stretched.
+  Click it to set a path in Settings.
 
 The panel never writes `tasks.json`. Adding and completing go through
 `qs -c todo ipc call todo addTask/toggleTask`, so the todo board remains the
@@ -72,7 +72,9 @@ until you pick one. The panel reads `~/.cache/ryoku/colors.json`, so it follows
 the Ryoku palette and accent.
 
 The card is square: `panelWidth` in `settings.json` sets both dimensions. The
-default is 560 px. The top-bar inset is 38 px.
+default is 800 px. The layout is drawn on a 560 px canvas and scaled uniformly
+with the card, so the type and controls grow with it; the size is capped to the
+available screen height. The top-bar inset is 38 px.
 
 ## Dependencies
 

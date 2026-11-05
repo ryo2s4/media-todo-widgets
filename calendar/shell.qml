@@ -15,10 +15,19 @@ ShellRoot {
     PanelWindow {
         id: root
 
-        readonly property int size: Math.min(620, Math.max(520, cfg.panelWidth))
         // the Ryoku top bar owns the first 38 px; start below it so the square
         // card drops out from under the bar at the top-right.
         readonly property int topInset: 38
+        readonly property int designSize: 560
+        readonly property int size: {
+            var cap = 900;
+            if (root.screen && root.screen.height > 0) {
+                cap = Math.min(cap, root.screen.height - topInset - 24);
+                cap = Math.min(cap, root.screen.width - 24);
+            }
+            return Math.min(cap, Math.max(520, cfg.panelWidth));
+        }
+        readonly property real zoom: size / designSize
         property bool open: false
         property bool settingsOpen: false
         property int calYear: new Date().getFullYear()
@@ -327,6 +336,13 @@ ShellRoot {
                         GradientStop { position: 1.0; color: "transparent" }
                     }
                 }
+
+                Item {
+                    id: design
+                    width: root.designSize
+                    height: root.designSize
+                    scale: root.zoom
+                    transformOrigin: Item.TopLeft
 
                 Item {
                     id: focusScope
@@ -1039,7 +1055,7 @@ ShellRoot {
                 visible: root.settingsOpen
                 z: 100
                 color: root.a(th.cardBot, 1.0)
-                radius: parent.radius
+                radius: panel.radius / root.zoom
 
                 Rectangle {
                     anchors.fill: parent
@@ -1252,6 +1268,7 @@ ShellRoot {
                         cityIn.text = cfg.city;
                     }
                 }
+            }
             }
             }
         }
