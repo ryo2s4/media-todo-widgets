@@ -4,5 +4,8 @@
  "units": "c",
  "accentOverride": "",
  "panelWidth": 800,
- "panelOpacity": 1
+ "panelOpacity": 1,
+ "autoLayout": true,
+ "reducedMotion": false,
+ "highContrast": false
 }

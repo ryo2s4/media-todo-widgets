@@ -11,6 +11,7 @@ Item {
     property color idle: "#888888"
     property color hot: "#ffffff"
     property string family: "monospace"
+    property int duration: 120
     signal clicked()
 
     implicitWidth: box
@@ -20,7 +21,7 @@ Item {
         anchors.fill: parent
         radius: width / 2
         color: (ma.containsMouse || ib.on) ? Qt.rgba(ib.hot.r, ib.hot.g, ib.hot.b, 0.12) : "transparent"
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { ColorAnimation { duration: ib.duration } }
     }
     Text {
         anchors.centerIn: parent
@@ -29,7 +30,7 @@ Item {
         font.family: ib.family
         font.pixelSize: ib.size
         scale: ma.pressed ? 0.86 : 1
-        Behavior on scale { NumberAnimation { duration: 90 } }
+        Behavior on scale { NumberAnimation { duration: Math.round(ib.duration * 0.65) } }
     }
     MouseArea {
         id: ma

@@ -6,14 +6,18 @@ lower half with the selected day's task list. A single square gif is tucked
 under the month.
 
 ```
-shell.qml         window, square layout, keyboard, settings card, todo bridge
+shell.qml         window, square layout, adaptive metrics, keyboard, todo bridge
 Store.qml         reads todo/tasks.json (read-only) and groups tasks by day
 CalendarGrid.qml  compact month grid; due times in the day cells
 MoonLine.qml      lunar-month progress line and phase marker
 Moon.qml          real phase drawing (no image set)
 WeatherStrip.qml  compact weather row under the moon line
 Weather.qml       Open-Meteo + IP geolocation, cached in weather.json
-Settings.qml      gif / city / units, saved in settings.json
+Settings.qml      persisted settings, defaults and migration
+SettingsSheet.qml compact two-column settings overlay
+SettingSlider.qml theme-matched size/opacity slider
+SettingField.qml  labelled single-line settings field
+Toggle.qml        small pill switch for the boolean settings
 IconBtn.qml       header and month-navigation buttons
 StatChip.qml      today/month counters in the header
 ```
@@ -26,9 +30,9 @@ The installer binds `SUPER + ALT + C` to `~/.local/bin/calendar-toggle`.
 
 ## Layout
 
-- **Header**: a date badge, a large 24-hour clock, date/week, today and month
-  counters, then settings and close buttons. The card drops out from under the
-  Ryoku top bar at the top-right of the focused monitor.
+- **Header**: a date badge, a large 24-hour clock, the date with its ISO week,
+  today and month counters, then settings and close buttons. The card drops out
+  from under the Ryoku top bar at the top-right of the focused monitor.
 - **Lunar line**: nine small phase moons mark the synodic cycle. The accent
   track fills to the current moon age, and a larger moon marker travels with it;
   the marker's lit shape, the phase name, illumination and lunar day all follow
@@ -65,16 +69,35 @@ and `17:30`. Quick-add accepts the same with `@`.
   and refreshes every 30 minutes. The strip shows the current condition, the
   temperature, today's high/low and the place.
 
-Click the gear in the header, the weather strip, or the gif tile for Settings:
-the gif path, the weather city (empty = guess from the network), and °C/°F. No
-gif is bundled (paths and copyright), so the slot shows a clickable placeholder
-until you pick one. The panel reads `~/.cache/ryoku/colors.json`, so it follows
-the Ryoku palette and accent.
+Click the gear in the header, the weather strip, or the gif tile for Settings.
+The sheet is a compact two-column layout and stays fully visible at the 520 px
+minimum size. It controls:
+
+- **Panel size**: a 520–900 px slider plus S/M/L presets (600/720/840).
+- **Opacity**: 50–100%.
+- **Fit layout to panel size**: picks compact, comfortable or roomy metrics
+  automatically, with 10 px hysteresis at the 660/780 px thresholds.
+- **Reduce motion**: stops the card slide and pauses the gif.
+- **High contrast**: brighter secondary text and stronger borders.
+- **Calendar**: accent override (empty uses the Ryoku palette) and the gif path.
+- **Weather**: the city (empty = guess from the network), °C/°F, and a reload
+  link. No gif is bundled (paths and copyright), so the slot shows a clickable
+  placeholder until you pick one.
+
+The panel reads `~/.cache/ryoku/colors.json`, so it follows the Ryoku palette and
+accent. Settings are written back to `settings.json` about 400 ms after a change.
+An older file without the three boolean keys still loads; the missing keys use
+their defaults (`autoLayout: true`, `reducedMotion: false`,
+`highContrast: false`) and are added on the next save.
 
 The card is square: `panelWidth` in `settings.json` sets both dimensions. The
-default is 800 px. The layout is drawn on a 560 px canvas and scaled uniformly
-with the card, so the type and controls grow with it; the size is capped to the
-available screen height. The top-bar inset is 38 px.
+default is 800 px and the range is 520–900 px. The layout is drawn on a 560 px
+canvas and scaled uniformly with the card, so type and controls grow with it.
+Automatic fitting uses compact metrics below 660 px, comfortable metrics from
+660–779 px, and roomy metrics at 780 px and above; the 10 px hysteresis stops a
+card near a threshold from flipping back and forth. Turn the toggle off to keep
+the comfortable layout at every size. The card is capped to the available screen
+height, with a 38 px top-bar inset.
 
 ## Dependencies
 

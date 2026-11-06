@@ -46,7 +46,13 @@ city in Settings, or automatic IP lookup) sits directly under that line. A singl
 square gif sits under the month; set its path in the calendar's Settings (gear in
 the header) or edit `~/.config/quickshell/calendar/settings.json`. No gif is
 bundled (paths and copyright), so the slot shows a clickable placeholder until
-you choose one. `panelWidth` in settings sets the square's size.
+you choose one.
+
+The card is resizable from 520–900 px (800 px by default), with S/M/L presets.
+The settings sheet also has opacity, automatic compact/comfortable/roomy layout,
+reduced motion, high contrast, accent override and weather units. Existing
+settings files migrate forward automatically; the installer still preserves the
+whole `calendar/settings.json`.
 
 The todo board supports due dates and times today: in quick-add use
 `Call the bank @tomorrow 17:30`, or edit a task and put `tomorrow 17:30` in the

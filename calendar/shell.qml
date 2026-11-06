@@ -28,6 +28,33 @@ ShellRoot {
             return Math.min(cap, Math.max(520, cfg.panelWidth));
         }
         readonly property real zoom: size / designSize
+
+        // The sheet is laid out on one 560 px canvas. These metrics let the
+        // same design breathe at 520 px and use the extra room at 900 px.
+        property string layoutMode: "comfortable"
+        readonly property bool compact: layoutMode === "compact"
+        readonly property bool roomy: layoutMode === "roomy"
+        readonly property int contentMargin: compact ? 14 : roomy ? 20 : 18
+        readonly property int headerH: compact ? 44 : roomy ? 52 : 48
+        readonly property int dateBox: compact ? 40 : roomy ? 46 : 44
+        readonly property int clockSize: compact ? 30 : roomy ? 36 : 34
+        readonly property int moonH: compact ? 44 : roomy ? 50 : 48
+        readonly property int weatherH: compact ? 32 : roomy ? 38 : 36
+        readonly property int rowGap: compact ? 7 : roomy ? 10 : 8
+        readonly property int bodyGap: compact ? 8 : roomy ? 14 : 12
+        readonly property int monthH: compact ? 232 : roomy ? 258 : 250
+        readonly property int gifMax: compact ? 96 : roomy ? 104 : 96
+        readonly property int cellH: Math.floor((monthH - 46) / 6)
+        readonly property int taskHeadH: compact ? 26 : roomy ? 30 : 28
+        readonly property int titleSize: compact ? 12 : roomy ? 14 : 13
+        readonly property int subSize: compact ? 7 : 8
+        readonly property int addH: compact ? 32 : roomy ? 36 : 34
+        readonly property int animFast: cfg.reducedMotion ? 0 : 140
+        readonly property int animBase: cfg.reducedMotion ? 0 : 280
+        readonly property int animSlow: cfg.reducedMotion ? 0 : 420
+        readonly property real borderAlpha: cfg.highContrast ? 0.38 : 0.12
+        readonly property int hairline: cfg.highContrast ? 2 : 1
+
         property bool open: false
         property bool settingsOpen: false
         property int calYear: new Date().getFullYear()
@@ -80,6 +107,14 @@ ShellRoot {
             var p = function (n) { return (n < 10 ? "0" : "") + n; };
             return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
         }
+        function isoWeek(d) {
+            // ISO-8601 week number. Qt's "ww" format is not a week number.
+            var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            var day = date.getUTCDay() || 7;
+            date.setUTCDate(date.getUTCDate() + 4 - day);
+            var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+            return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+        }
         function setMonth(y, m) {
             if (m < 0) { m = 11; y -= 1; }
             if (m > 11) { m = 0; y += 1; }
@@ -88,6 +123,28 @@ ShellRoot {
             var now = new Date();
             selectedKey = (y === now.getFullYear() && m === now.getMonth()) ? store.todayKey() : keyForDay(1);
         }
+
+        // Three sizes, with a little hysteresis so a monitor or manual resize
+        // near a threshold does not flip the layout back and forth.
+        function nextLayout(px, current) {
+            var h = 10;
+            if (current === "compact")
+                return px >= 660 + h ? (px >= 780 + h ? "roomy" : "comfortable") : "compact";
+            if (current === "roomy")
+                return px < 780 - h ? (px < 660 - h ? "compact" : "comfortable") : "roomy";
+            return px < 660 - h ? "compact" : (px >= 780 + h ? "roomy" : "comfortable");
+        }
+        function updateLayout() {
+            if (!cfg.autoLayout) {
+                layoutMode = "comfortable";
+                return;
+            }
+            var next = nextLayout(size, layoutMode);
+            if (next !== layoutMode)
+                layoutMode = next;
+        }
+        onSizeChanged: updateLayout()
+        Component.onCompleted: updateLayout()
 
         IpcHandler {
             target: "calendar"
@@ -118,6 +175,10 @@ ShellRoot {
         }
 
         Settings { id: cfg }
+        Connections {
+            target: cfg
+            function onAutoLayoutChanged() { root.updateLayout(); }
+        }
         Store { id: store }
         Weather {
             id: wx
@@ -131,11 +192,13 @@ ShellRoot {
         QtObject {
             id: th
             property color accent: "#90cef4"
-            property color bright: "#dfe3e7"
-            property color dim: "#8b9297"
+            property color brightBase: "#dfe3e7"
+            property color dimBase: "#8b9297"
             property color cardBot: "#0f1417"
             property int radius: 12
             property int gap: 12
+            readonly property color bright: cfg.highContrast ? "#ffffff" : brightBase
+            readonly property color dim: cfg.highContrast ? Qt.lighter(dimBase, 1.45) : dimBase
             readonly property string font: "JetBrainsMono Nerd Font"
         }
 
@@ -171,8 +234,8 @@ ShellRoot {
                 return fallback;
             }
             th.accent = pick(["accent", "primary", "vermilion", "verm", "primary_color"], th.accent);
-            th.bright = pick(["on_surface", "foreground", "fg", "text", "bright", "on_background"], th.bright);
-            th.dim = pick(["on_surface_variant", "dim", "muted", "outline", "subtext", "comment"], th.dim);
+            th.brightBase = pick(["on_surface", "foreground", "fg", "text", "bright", "on_background"], th.brightBase);
+            th.dimBase = pick(["on_surface_variant", "dim", "muted", "outline", "subtext", "comment"], th.dimBase);
             th.cardBot = pick(["surface_container", "surface", "background", "bg", "card_bot", "cardbot", "base"], th.cardBot);
             if (cfg.accentValid)
                 th.accent = cfg.accentOverride;
@@ -310,8 +373,8 @@ ShellRoot {
                 x: th.gap
                 y: root.open ? th.gap : -height - th.gap
                 opacity: root.open ? 1 : 0
-                Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-                Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: root.animBase; easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: root.animFast; easing.type: Easing.OutCubic } }
 
                 radius: th.radius + 2
                 color: "transparent"
@@ -320,8 +383,8 @@ ShellRoot {
                     GradientStop { position: 0.05; color: root.a(th.cardBot, cfg.panelOpacity) }
                     GradientStop { position: 1.0; color: root.a(th.cardBot, cfg.panelOpacity) }
                 }
-                border.width: 1
-                border.color: root.a(th.dim, 0.28)
+                border.width: root.hairline
+                border.color: root.a(th.dim, cfg.highContrast ? 0.55 : 0.28)
 
                 Rectangle {
                     width: parent.width - 90
@@ -356,10 +419,10 @@ ShellRoot {
                             else
                                 root.open = false;
                             e.accepted = true;
-                        } else if (e.key === Qt.Key_Left && !addIn.activeFocus && !timeIn.activeFocus) {
+                        } else if (e.key === Qt.Key_Left && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
                             root.setMonth(root.calYear, root.calMonth - 1);
                             e.accepted = true;
-                        } else if (e.key === Qt.Key_Right && !addIn.activeFocus && !timeIn.activeFocus) {
+                        } else if (e.key === Qt.Key_Right && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
                             root.setMonth(root.calYear, root.calMonth + 1);
                             e.accepted = true;
                         } else if (e.key === Qt.Key_T && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
@@ -371,13 +434,13 @@ ShellRoot {
                     Item {
                         id: content
                         anchors.fill: parent
-                        anchors.margins: 18
+                        anchors.margins: root.contentMargin
 
                         // ── clock, date, stats ──
                         Item {
                             id: header
                             width: parent.width
-                            height: 48
+                            height: root.headerH
 
                             Row {
                                 anchors.left: parent.left
@@ -385,9 +448,9 @@ ShellRoot {
                                 spacing: 10
 
                                 Rectangle {
-                                    width: 44
-                                    height: 44
-                                    radius: 10
+                                    width: root.dateBox
+                                    height: root.dateBox
+                                    radius: Math.round(root.dateBox * 0.23)
                                     gradient: Gradient {
                                         GradientStop { position: 0.0; color: root.a(th.accent, 0.96) }
                                         GradientStop { position: 1.0; color: root.a(th.accent, 0.42) }
@@ -426,7 +489,7 @@ ShellRoot {
                                             text: Qt.formatTime(root.now, "HH:mm")
                                             color: th.bright
                                             font.family: th.font
-                                            font.pixelSize: 34
+                                            font.pixelSize: root.clockSize
                                             font.bold: true
                                         }
                                         Text {
@@ -439,7 +502,7 @@ ShellRoot {
                                         }
                                     }
                                     Text {
-                                        text: Qt.formatDate(root.now, "dddd, d MMMM") + "  \u00B7  week " + Qt.formatDate(root.now, "ww")
+                                        text: Qt.formatDate(root.now, "dddd, d MMMM") + "  \u00B7  week " + root.isoWeek(root.now)
                                         color: root.a(th.dim, 0.9)
                                         font.family: th.font
                                         font.pixelSize: 8
@@ -461,6 +524,7 @@ ShellRoot {
                                 }
                                 StatChip {
                                     glyph: "\u25F7"
+                                    visible: !root.compact
                                     label: store.countMonth(root.calYear, root.calMonth) + " month"
                                     tone: store.countMonth(root.calYear, root.calMonth) > 0 ? th.accent : th.dim
                                     textColor: store.countMonth(root.calYear, root.calMonth) > 0 ? th.bright : th.dim
@@ -475,6 +539,7 @@ ShellRoot {
                                     idle: th.dim
                                     hot: th.accent
                                     family: th.font
+                                    duration: root.animFast
                                     onClicked: root.settingsOpen = !root.settingsOpen
                                 }
                                 IconBtn {
@@ -484,6 +549,7 @@ ShellRoot {
                                     idle: th.dim
                                     hot: th.accent
                                     family: th.font
+                                    duration: root.animFast
                                     onClicked: root.open = false
                                 }
                             }
@@ -492,9 +558,9 @@ ShellRoot {
                         // ── lunar month line ──
                         MoonLine {
                             id: moonLine
-                            y: header.height + 8
+                            y: header.height + root.rowGap
                             width: parent.width
-                            height: 48
+                            height: root.moonH
                             accent: th.accent
                             bright: th.bright
                             dim: th.dim
@@ -505,9 +571,9 @@ ShellRoot {
                         // ── weather under the lunar line ──
                         WeatherStrip {
                             id: weather
-                            y: moonLine.y + moonLine.height + 8
+                            y: moonLine.y + moonLine.height + root.rowGap
                             width: parent.width
-                            height: 36
+                            height: root.weatherH
                             wx: wx
                             accent: th.accent
                             bright: th.bright
@@ -519,17 +585,17 @@ ShellRoot {
                         // ── month + selected-day tasks ──
                         Item {
                             id: body
-                            y: weather.y + weather.height + 12
+                            y: weather.y + weather.height + root.bodyGap
                             width: parent.width
                             height: parent.height - y
 
-                            readonly property real leftW: Math.round(width * 0.55)
-                            readonly property real rightW: width - leftW - 12
-                            readonly property real gifSize: Math.max(56, Math.min(96, height - 260))
+                            readonly property real leftW: Math.round(width * (root.compact ? 0.56 : 0.55))
+                            readonly property real rightW: width - leftW - (root.compact ? 8 : 12)
+                            readonly property real gifSize: Math.max(56, Math.min(root.gifMax, height - monthCard.height - 10))
 
                             Row {
                                 anchors.fill: parent
-                                spacing: 12
+                                spacing: root.compact ? 8 : 12
 
                                 Item {
                                     width: body.leftW
@@ -538,11 +604,11 @@ ShellRoot {
                                     Rectangle {
                                         id: monthCard
                                         width: parent.width
-                                        height: 250
+                                        height: root.monthH
                                         radius: th.radius
                                         color: root.a(th.dim, 0.035)
-                                        border.width: 1
-                                        border.color: root.a(th.dim, 0.12)
+                                        border.width: root.hairline
+                                        border.color: root.a(th.dim, root.borderAlpha)
 
                                         Item {
                                             id: monthHead
@@ -605,6 +671,7 @@ ShellRoot {
                                                     idle: th.dim
                                                     hot: th.accent
                                                     family: th.font
+                                                    duration: root.animFast
                                                     onClicked: root.setMonth(root.calYear, root.calMonth - 1)
                                                 }
                                                 IconBtn {
@@ -614,6 +681,7 @@ ShellRoot {
                                                     idle: th.dim
                                                     hot: th.accent
                                                     family: th.font
+                                                    duration: root.animFast
                                                     onClicked: root.setMonth(root.calYear, root.calMonth + 1)
                                                 }
                                             }
@@ -646,7 +714,7 @@ ShellRoot {
                                             x: 8
                                             y: 37
                                             width: parent.width - 16
-                                            height: 209
+                                            height: parent.height - 41
                                             store: store
                                             selectedKey: root.selectedKey
                                             year: root.calYear
@@ -656,7 +724,7 @@ ShellRoot {
                                             dim: th.dim
                                             cardBg: th.cardBot
                                             font: th.font
-                                            cellHeight: 34
+                                            cellHeight: root.cellH
                                             onDayClicked: function (key) { root.selectedKey = key }
                                         }
                                     }
@@ -673,8 +741,8 @@ ShellRoot {
                                             height: body.gifSize
                                             radius: th.radius
                                             color: root.a(th.dim, 0.035)
-                                            border.width: 1
-                                            border.color: root.a(th.dim, 0.12)
+                                            border.width: root.hairline
+                                            border.color: root.a(th.dim, root.borderAlpha)
                                             clip: true
 
                                             Item {
@@ -688,7 +756,7 @@ ShellRoot {
                                                     fillMode: Image.PreserveAspectCrop
                                                     asynchronous: true
                                                     smooth: true
-                                                    playing: root.open
+                                                    playing: root.open && !cfg.reducedMotion
                                                     cache: false
                                                     sourceSize.width: gifFrame.width * 2
                                                     sourceSize.height: gifFrame.height * 2
@@ -768,8 +836,8 @@ ShellRoot {
                                     height: parent.height
                                     radius: th.radius
                                     color: root.a(th.dim, 0.035)
-                                    border.width: 1
-                                    border.color: root.a(th.dim, 0.12)
+                                    border.width: root.hairline
+                                    border.color: root.a(th.dim, root.borderAlpha)
 
                                     readonly property int taskCount: store.countOn(root.selectedKey)
 
@@ -778,7 +846,7 @@ ShellRoot {
                                         x: 10
                                         y: 8
                                         width: parent.width - 20
-                                        height: 28
+                                        height: root.taskHeadH
 
                                         Column {
                                             anchors.left: parent.left
@@ -788,14 +856,14 @@ ShellRoot {
                                                 text: store.dayTitle(root.selectedKey)
                                                 color: root.selectedKey === store.todayKey() ? th.accent : th.bright
                                                 font.family: th.font
-                                                font.pixelSize: 13
+                                                font.pixelSize: root.titleSize
                                                 font.bold: true
                                             }
                                             Text {
                                                 text: taskCard.taskCount + (taskCard.taskCount === 1 ? " task" : " tasks")
                                                 color: root.a(th.dim, 0.8)
                                                 font.family: th.font
-                                                font.pixelSize: 8
+                                                font.pixelSize: root.subSize
                                             }
                                         }
 
@@ -818,18 +886,18 @@ ShellRoot {
 
                                     Rectangle {
                                         x: 10
-                                        y: 40
+                                        y: taskHead.height + 12
                                         width: parent.width - 20
                                         height: 1
-                                        color: root.a(th.dim, 0.12)
+                                        color: root.a(th.dim, cfg.highContrast ? 0.3 : 0.12)
                                     }
 
                                     Flickable {
                                         id: taskFlick
                                         x: 10
-                                        y: 46
+                                        y: taskHead.height + 18
                                         width: parent.width - 20
-                                        height: parent.height - 46 - 60
+                                        height: parent.height - y - (root.addH + 26)
                                         contentWidth: width
                                         contentHeight: taskCol.height
                                         boundsBehavior: Flickable.StopAtBounds
@@ -957,14 +1025,14 @@ ShellRoot {
                                     Rectangle {
                                         id: addBox
                                         x: 10
-                                        y: parent.height - 54
+                                        y: parent.height - root.addH - 20
                                         width: parent.width - 20
-                                        height: 34
+                                        height: root.addH
                                         radius: 7
                                         color: root.a(th.dim, 0.06)
-                                        border.width: 1
+                                        border.width: root.hairline
                                         border.color: (addIn.activeFocus || timeIn.activeFocus)
-                                            ? th.accent : root.a(th.dim, 0.18)
+                                            ? th.accent : root.a(th.dim, cfg.highContrast ? 0.45 : 0.18)
 
                                         Text {
                                             x: 9
@@ -1048,226 +1116,22 @@ ShellRoot {
                         }
                     }
                 }
-            // ── settings card ──
-            Rectangle {
-                id: settingsCard
+            // ── settings sheet ──
+            SettingsSheet {
+                id: settingsSheet
                 anchors.fill: parent
-                visible: root.settingsOpen
-                z: 100
-                color: root.a(th.cardBot, 1.0)
-                radius: panel.radius / root.zoom
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: root.a(th.cardBot, 1.0)
-                    radius: parent.radius
-                    z: -1
-                }
-
-                // keep clicks and scrolling on the card while it is open
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.AllButtons
-                    onWheel: function (wheel) { wheel.accepted = true }
-                }
-
-                Column {
-                    x: 24
-                    y: 22
-                    width: parent.width - 48
-                    spacing: 15
-                    z: 1
-
-                    Item {
-                        width: parent.width
-                        height: 24
-                        Text {
-                            text: "Settings"
-                            color: th.bright
-                            font.family: th.font
-                            font.pixelSize: 15
-                            font.bold: true
-                        }
-                        Text {
-                            anchors.right: parent.right
-                            text: "close \u00D7"
-                            color: setCloseHover.hovered ? th.accent : th.dim
-                            font.family: th.font
-                            font.pixelSize: 10
-                            HoverHandler { id: setCloseHover }
-                            MouseArea {
-                                anchors.fill: parent
-                                anchors.margins: -5
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    cfg.set("gif", gifIn.text.trim());
-                                    cfg.set("city", cityIn.text.trim());
-                                    root.settingsOpen = false;
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        text: "GIF"
-                        color: root.a(th.dim, 0.9)
-                        font.family: th.font
-                        font.pixelSize: 9
-                    }
-                    Rectangle {
-                        width: parent.width
-                        height: 32
-                        radius: 5
-                        color: root.a(th.dim, 0.06)
-                        border.width: 1
-                        border.color: root.a(th.dim, 0.18)
-                        TextInput {
-                            id: gifIn
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            verticalAlignment: TextInput.AlignVCenter
-                            color: th.bright
-                            selectionColor: root.a(th.accent, 0.45)
-                            selectedTextColor: th.bright
-                            font.family: th.font
-                            font.pixelSize: 10
-                            clip: true
-                            onEditingFinished: cfg.set("gif", text.trim())
-                        }
-                        Text {
-                            x: 9
-                            width: parent.width - 18
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: gifIn.text === ""
-                            text: "~/Pictures/your.gif"
-                            color: root.a(th.dim, 0.55)
-                            elide: Text.ElideRight
-                            font.family: th.font
-                            font.pixelSize: 10
-                        }
-                    }
-
-                    Text {
-                        text: "WEATHER CITY"
-                        color: root.a(th.dim, 0.9)
-                        font.family: th.font
-                        font.pixelSize: 9
-                    }
-                    Rectangle {
-                        width: parent.width
-                        height: 32
-                        radius: 5
-                        color: root.a(th.dim, 0.06)
-                        border.width: 1
-                        border.color: root.a(th.dim, 0.18)
-                        TextInput {
-                            id: cityIn
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            verticalAlignment: TextInput.AlignVCenter
-                            color: th.bright
-                            selectionColor: root.a(th.accent, 0.45)
-                            selectedTextColor: th.bright
-                            font.family: th.font
-                            font.pixelSize: 10
-                            clip: true
-                            onEditingFinished: cfg.set("city", text.trim())
-                        }
-                        Text {
-                            x: 9
-                            width: parent.width - 18
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: cityIn.text === ""
-                            text: "empty = guess from the network"
-                            color: root.a(th.dim, 0.55)
-                            elide: Text.ElideRight
-                            font.family: th.font
-                            font.pixelSize: 10
-                        }
-                    }
-
-                    Row {
-                        spacing: 8
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "UNITS"
-                            color: root.a(th.dim, 0.9)
-                            font.family: th.font
-                            font.pixelSize: 9
-                        }
-                        Rectangle {
-                            width: 36
-                            height: 22
-                            radius: 4
-                            color: cfg.units === "c" ? root.a(th.accent, 0.18) : root.a(th.dim, 0.06)
-                            border.width: 1
-                            border.color: cfg.units === "c" ? th.accent : root.a(th.dim, 0.2)
-                            Text {
-                                anchors.centerIn: parent
-                                text: "\u00B0C"
-                                color: cfg.units === "c" ? th.accent : th.dim
-                                font.family: th.font
-                                font.pixelSize: 9
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: cfg.set("units", "c")
-                            }
-                        }
-                        Rectangle {
-                            width: 36
-                            height: 22
-                            radius: 4
-                            color: cfg.units === "f" ? root.a(th.accent, 0.18) : root.a(th.dim, 0.06)
-                            border.width: 1
-                            border.color: cfg.units === "f" ? th.accent : root.a(th.dim, 0.2)
-                            Text {
-                                anchors.centerIn: parent
-                                text: "\u00B0F"
-                                color: cfg.units === "f" ? th.accent : th.dim
-                                font.family: th.font
-                                font.pixelSize: 9
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: cfg.set("units", "f")
-                            }
-                        }
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: "The calendar reads your todo list live. New tasks and checkmarks are sent to the todo panel, so both stay in sync."
-                        color: root.a(th.dim, 0.6)
-                        font.family: th.font
-                        font.pixelSize: 9
-                        wrapMode: Text.WordWrap
-                        lineHeight: 1.25
-                    }
-
-                    Text {
-                        text: "reload weather"
-                        color: reloadHover.hovered ? th.accent : root.a(th.dim, 0.8)
-                        font.family: th.font
-                        font.pixelSize: 9
-                        HoverHandler { id: reloadHover }
-                        MouseArea {
-                            anchors.fill: parent
-                            anchors.margins: -4
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: wx.refresh(true)
-                        }
-                    }
-                }
-
-                onVisibleChanged: {
-                    if (visible) {
-                        gifIn.text = cfg.gif;
-                        cityIn.text = cfg.city;
-                    }
-                }
+                open: root.settingsOpen
+                cfg: cfg
+                weather: wx
+                accent: th.accent
+                bright: th.bright
+                dim: th.dim
+                cardBg: th.cardBot
+                font: th.font
+                radius: Math.max(10, panel.radius / root.zoom)
+                highContrast: cfg.highContrast
+                motionFast: root.animFast
+                onClosed: root.settingsOpen = false
             }
             }
             }

@@ -15,15 +15,19 @@ Scope {
     property int panelWidth: 800
     property real panelOpacity: 1.0
     property string accentOverride: ""   // "#rrggbb", empty = Ryoku palette
+    property bool autoLayout: true       // compact / comfortable / roomy by size
+    property bool reducedMotion: false
+    property bool highContrast: false
 
     readonly property var strKeys: ["gif", "city", "units", "accentOverride"]
     readonly property var numKeys: ["panelWidth", "panelOpacity"]
+    readonly property var boolKeys: ["autoLayout", "reducedMotion", "highContrast"]
 
     readonly property bool accentValid: /^#[0-9a-f]{6}$/i.test(accentOverride.trim())
 
     function _obj() {
         var o = {};
-        var all = strKeys.concat(numKeys);
+        var all = strKeys.concat(numKeys).concat(boolKeys);
         for (var i = 0; i < all.length; i++)
             o[all[i]] = cfg[all[i]];
         return o;
@@ -38,6 +42,13 @@ Scope {
             for (var j = 0; j < numKeys.length; j++)
                 if (s[numKeys[j]] !== undefined && !isNaN(Number(s[numKeys[j]])))
                     cfg[numKeys[j]] = Number(s[numKeys[j]]);
+            for (var k = 0; k < boolKeys.length; k++) {
+                var key = boolKeys[k];
+                if (s[key] !== undefined) {
+                    var v = s[key];
+                    cfg[key] = v === true || v === 1 || v === "1" || v === "true";
+                }
+            }
         } catch (e) {
             console.log("calendar: could not read settings.json:", e);
         }
