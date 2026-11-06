@@ -23,6 +23,10 @@ IconBtn.qml       header and month-navigation buttons
 StatChip.qml      clickable today/overdue/month counters
 TaskSection.qml   read-only OVERDUE / OPEN / DONE group
 TaskRow.qml       one task line with status, repeat and tags
+SearchPanel.qml   read-only task search, grouped by due date
+DetailOverlay.qml modal shell for the moon and weather detail cards
+MoonDetail.qml    phase, illumination and next new/full dates
+WeatherDetail.qml current conditions, local hint and three-day outlook
 ```
 
 Run: `qs -c calendar`
@@ -56,9 +60,29 @@ The installer binds `SUPER + ALT + C` to `~/.local/bin/calendar-toggle`.
   board; click it to jump to that day. Each row has a read-only status dot, the
   title, and the due time (or `all day`) plus repeat/tag metadata. Clicking
   the title opens the todo panel. The list scrolls when it fills. The calendar
-  is a viewer: it has no add or check-off controls.
+  is a viewer: it has no add or check-off controls. The header search glyph or
+  the `/` key opens a read-only search over every task title and tag; results
+  are grouped by due date with undated tasks last. Select a dated result to jump
+  to its day, or an undated result to open the todo panel.
 - **Gif**: one square tile under the month, aspect-cropped rather than stretched.
   Click it to set a path in Settings.
+
+## Keys
+
+| key | action |
+|---|---|
+| `/` | open task search |
+| `Esc` | close search/detail/settings/month picker, then the card |
+| `Enter` (in search) | open the first result |
+| `Left` / `Right` | previous / next month |
+| `Shift + Left` / `Shift + Right` | previous / next day |
+| `Shift + Up` / `Shift + Down` | previous / next week |
+| `T` | jump to today |
+| `M` | open the month/year picker |
+
+The search field keeps focus while open, so `Esc` returns to the calendar.
+Shift-arrow navigation crosses month boundaries and updates both the grid and
+the selected-day tasks.
 
 The panel never writes `tasks.json` and never adds or checks off a task. Those
 actions stay in the todo panel, which remains the only writer and the place to
@@ -71,13 +95,20 @@ the calendar simply shows the resulting day and time.
   month 29.530588853 days, epoch 2000-01-06 18:14 UTC). The terminator is the
   projected edge of the lit half of the sphere, so the crescent grows and
   shrinks correctly through the month. The line is a timeline of that month:
-  the filled track and the large marker move with the moon's age.
+  the filled track and the large marker move with the moon's age. Click the
+  lunar line for a detail card with the phase, illumination and approximate
+  next new/full dates.
 - **Weather**: Open-Meteo, no API key. The place comes from the city in Settings,
   or from an IP lookup when that is empty. The cache lives in `weather.json`
   and refreshes every 30 minutes. The strip shows the current condition, the
-  temperature, today's high/low and the place.
+  temperature, today's high/low and the place. Click it for current details,
+  sunrise/sunset, wind/humidity and the next three days. A conservative local
+  heads-up (heavy rain, snow, wind, heat, cold or fog) is labelled as a hint,
+  never as an official alert.
 
-Click the gear in the header, the weather strip, or the gif tile for Settings.
+Click the gear in the header or the gif tile for Settings. The moon line and
+weather strip open their read-only detail cards instead.
+
 The sheet is a compact two-column layout and stays fully visible at the 520 px
 minimum size. It controls:
 
@@ -88,9 +119,10 @@ minimum size. It controls:
 - **Reduce motion**: stops the card slide and pauses the gif.
 - **High contrast**: brighter secondary text and stronger borders.
 - **Calendar**: accent override (empty uses the Ryoku palette) and the gif path.
-- **Weather**: the city (empty = guess from the network), °C/°F, and a reload
-  link. No gif is bundled (paths and copyright), so the slot shows a clickable
+  No gif is bundled (paths and copyright), so the slot shows a clickable
   placeholder until you pick one.
+- **Weather**: the city (empty = guess from the network), °C/°F, and a reload
+  link.
 
 The panel reads `~/.cache/ryoku/colors.json`, so it follows the Ryoku palette and
 accent. Settings are written back to `settings.json` about 400 ms after a change.
@@ -114,3 +146,7 @@ height, with a 38 px top-bar inset.
 - a Nerd Font for the weather glyphs (`JetBrainsMono Nerd Font` is used)
 
 Tasks live in the todo widget; this panel only reads them.
+
+V1 intentionally leaves out radar/weather-alert feeds, moonrise/set, fuzzy
+search, drag rescheduling and a full screen-reader audit. The search and detail
+views are read-only and never touch `tasks.json`.

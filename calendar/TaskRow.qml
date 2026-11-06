@@ -23,7 +23,8 @@ Item {
     readonly property string meta: {
         if (!task)
             return "";
-        var parts = [store.isDateOnly(task.due) ? "all day" : store.timeLabel(task.due)];
+        var parts = [! (task.due > 0) ? "no due"
+            : store.isDateOnly(task.due) ? "all day" : store.timeLabel(task.due)];
         if (String(task.repeat || "").trim() !== "")
             parts.push("\u21BB " + task.repeat);
         if (task.tags && task.tags.length > 0) {

@@ -40,6 +40,33 @@ Scope {
     readonly property bool busy: geoProc.running || fcProc.running
     readonly property string cachePath: Quickshell.env("HOME") + "/.config/quickshell/calendar/weather.json"
 
+    // A local, conservative heads-up derived from the current conditions. It
+    // is not an official weather alert and never replaces one.
+    readonly property var advisory: {
+        if (!ready)
+            return null;
+        var c = units === "f" ? (temp - 32) * 5 / 9 : temp;
+        if (kind === "storm")
+            return { text: "Thunderstorm nearby \u2014 stay indoors if you can" };
+        if (code === 66 || code === 67)
+            return { text: "Freezing rain \u2014 watch for ice" };
+        if (code === 65)
+            return { text: "Heavy rain \u2014 expect wet roads" };
+        if (code === 75 || code === 86)
+            return { text: "Heavy snow \u2014 allow extra travel time" };
+        if (code === 71 || code === 73 || code === 77 || code === 85)
+            return { text: "Snow \u2014 allow extra travel time" };
+        if (wind >= 45)
+            return { text: "Strong wind \u2014 secure loose items" };
+        if (c >= 34)
+            return { text: "Hot \u2014 hydrate and limit midday sun" };
+        if (c <= -5)
+            return { text: "Very cold \u2014 cover exposed skin" };
+        if (kind === "fog")
+            return { text: "Low visibility \u2014 take it slow" };
+        return null;
+    }
+
     function describe(c) {
         if (c === 0) return { kind: "clear", desc: "Clear" };
         if (c === 1) return { kind: "clear", desc: "Mostly clear" };

@@ -21,6 +21,8 @@ Item {
     property real illumination: 0
     property int lunarDay: 1
     property string phaseName: "New moon"
+    property date nextNew: new Date()
+    property date nextFull: new Date()
 
     readonly property real synodic: 29.530588853
     readonly property double epoch: Date.UTC(2000, 0, 6, 18, 14, 0)
@@ -35,7 +37,19 @@ Item {
         illumination = (1 - Math.cos(phase * Math.PI * 2)) / 2;
         lunarDay = Math.floor(age) + 1;
         phaseName = nameFor(phase);
+        nextNew = dateAtPhase(0);
+        nextFull = dateAtPhase(0.5);
         canvas.requestPaint();
+    }
+
+    // Date of the next occurrence of a phase fraction. This is intentionally
+    // approximate (the synodic month varies slightly), which is plenty for a
+    // glanceable calendar card.
+    function dateAtPhase(target) {
+        var delta = target - phase;
+        if (delta < 0)
+            delta += 1;
+        return new Date(Date.now() + delta * synodic * 86400000);
     }
 
     function nameFor(p) {

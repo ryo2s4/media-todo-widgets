@@ -116,6 +116,45 @@ Scope {
         return out;
     }
 
+    // Simple case-insensitive substring search over task text and tags. Results
+    // are grouped by due date, undated tasks last; the panel stays read-only.
+    function searchGroups(query) {
+        var q = String(query === undefined || query === null ? "" : query).trim().toLowerCase();
+        if (q === "")
+            return [];
+        var groups = {};
+        for (var i = 0; i < tasks.length; i++) {
+            var t = tasks[i];
+            var tags = t.tags && t.tags.length > 0 ? t.tags.join(" ") : "";
+            var hay = (String(t.text || "") + " " + tags).toLowerCase();
+            if (hay.indexOf(q) < 0)
+                continue;
+            var key = t.due > 0 ? dayKey(t.due) : "";
+            if (!groups[key])
+                groups[key] = [];
+            groups[key].push(t);
+        }
+        var keys = Object.keys(groups);
+        keys.sort(function (a, b) {
+            if (a === "")
+                return 1;
+            if (b === "")
+                return -1;
+            return a < b ? -1 : 1;
+        });
+        var out = [];
+        for (var k = 0; k < keys.length; k++) {
+            var keyName = keys[k];
+            groups[keyName].sort(_order);
+            out.push({
+                key: keyName,
+                title: keyName === "" ? "No due date" : dayTitle(keyName),
+                tasks: groups[keyName]
+            });
+        }
+        return out;
+    }
+
     // One derived snapshot per day for the grid and its hover card.
     function statsOn(key) {
         var list = byDay[key] || [];

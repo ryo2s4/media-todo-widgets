@@ -8,11 +8,15 @@ Item {
     property color accent: "#90cef4"
     property color bright: "#dfe3e7"
     property color dim: "#8b9297"
+    property color warn: "#e8a15a"
     property string font: "JetBrainsMono Nerd Font"
 
     signal clicked()
 
     implicitHeight: 36
+
+    Accessible.role: Accessible.Button
+    Accessible.name: "Weather details"
 
     function a(c, v) { return Qt.rgba(c.r, c.g, c.b, v); }
 
@@ -78,6 +82,14 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 7
 
+        Text {
+            visible: strip.wx && strip.wx.advisory !== null
+            anchors.verticalCenter: parent.verticalCenter
+            text: "\u26A0"
+            color: strip.warn
+            font.family: strip.font
+            font.pixelSize: 8
+        }
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: strip.wx && strip.wx.ready ? "\u2191" + Math.round(strip.wx.hi) + "  \u2193" + Math.round(strip.wx.lo) : ""

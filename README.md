@@ -40,17 +40,21 @@ times and task counts on their days, and the task column beside it holds the
 selected day's full list, grouped overdue/open/done. Busy days are tinted for
 open work, overdue work or all-done days; hovering one opens a small summary
 and task preview. The header chips jump to today or the oldest overdue day,
-and the month name opens a month/year picker. The calendar is a viewer:
-adding, completing and rescheduling stay in the todo panel, which remains the
-single writer.
+and the month name opens a month/year picker. The header search glyph or `/`
+opens a read-only task search grouped by due date; selecting a dated result
+jumps to that day, while an undated result opens todo. Shift+Left/Right moves by
+day and Shift+Up/Down by week. The calendar is a viewer: adding, completing and
+rescheduling stay in the todo panel, which remains the single writer.
 
 The clock sits at the top; underneath it a lunar-month line moves with the real
-moon's age and changes its phase shape as the month turns. Weather (Open-Meteo;
-city in Settings, or automatic IP lookup) sits directly under that line. A single
-square gif sits under the month; set its path in the calendar's Settings (gear in
-the header) or edit `~/.config/quickshell/calendar/settings.json`. No gif is
-bundled (paths and copyright), so the slot shows a clickable placeholder until
-you choose one.
+moon's age and changes its phase shape as the month turns. Click the line for
+phase, illumination and next new/full dates. Weather (Open-Meteo; city in
+Settings, or automatic IP lookup) sits directly under that line; click it for
+current details, sunrise/sunset, wind/humidity, a conservative local hint and a
+three-day outlook. A single square gif sits under the month; set its path in the
+calendar's Settings (gear in the header) or edit
+`~/.config/quickshell/calendar/settings.json`. No gif is bundled (paths and
+copyright), so the slot shows a clickable placeholder until you choose one.
 
 The card is resizable from 520–900 px (700 px by default, with S/M/L presets
 560/700/800). The task column shows a completion bar, a `NEXT` row for the next

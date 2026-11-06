@@ -61,6 +61,8 @@ ShellRoot {
         property bool open: false
         property bool settingsOpen: false
         property bool monthPickerOpen: false
+        property bool searchOpen: false
+        property string detailMode: ""
         property int calYear: new Date().getFullYear()
         property int calMonth: new Date().getMonth()
         property string selectedKey: store.todayKey()
@@ -83,10 +85,33 @@ ShellRoot {
             } else {
                 settingsOpen = false;
                 monthPickerOpen = false;
+                searchOpen = false;
+                detailMode = "";
             }
         }
-        onSettingsOpenChanged: if (settingsOpen) monthPickerOpen = false
-        onMonthPickerOpenChanged: if (monthPickerOpen) settingsOpen = false
+        onSettingsOpenChanged: {
+            if (settingsOpen) {
+                monthPickerOpen = false;
+                searchOpen = false;
+                detailMode = "";
+            }
+        }
+        onMonthPickerOpenChanged: if (monthPickerOpen) {
+            settingsOpen = false;
+            searchOpen = false;
+            detailMode = "";
+        }
+        onSearchOpenChanged: if (searchOpen) {
+            settingsOpen = false;
+            monthPickerOpen = false;
+            detailMode = "";
+            Qt.callLater(searchPanel.focusField);
+        }
+        onDetailModeChanged: if (detailMode !== "") {
+            settingsOpen = false;
+            monthPickerOpen = false;
+            searchOpen = false;
+        }
 
         function focusMonitor() {
             var m = Hyprland.focusedMonitor;
@@ -120,6 +145,32 @@ ShellRoot {
             calMonth = d.getMonth();
             selectedKey = store.dayKey(task.due);
             monthPickerOpen = false;
+            searchOpen = false;
+        }
+        function selectDayOffset(days) {
+            var p = String(selectedKey).split("-");
+            if (p.length !== 3) {
+                goToday();
+                return;
+            }
+            var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+            d.setDate(d.getDate() + days);
+            calYear = d.getFullYear();
+            calMonth = d.getMonth();
+            selectedKey = keyForDay(d.getDate());
+            monthPickerOpen = false;
+        }
+        function openSearch() {
+            openPanel();
+            searchOpen = true;
+        }
+        function closeSearch() {
+            searchOpen = false;
+            Qt.callLater(focusScope.forceActiveFocus);
+        }
+        function openDetail(mode) {
+            openPanel();
+            detailMode = mode;
         }
         function selectOldestOverdue() {
             if (store.overdueTasks.length > 0)
@@ -188,6 +239,7 @@ ShellRoot {
             function closeSettings(): void { root.settingsOpen = false; }
             function today(): void { root.goToday(); root.openPanel(); }
             function months(): void { root.monthPickerOpen = true; root.openPanel(); }
+            function search(): void { root.openSearch(); }
             function overdue(): string {
                 if (store.overdueTasks.length === 0)
                     return "none";
@@ -421,11 +473,30 @@ ShellRoot {
                                 root.settingsOpen = false;
                             else if (root.monthPickerOpen)
                                 root.monthPickerOpen = false;
+                            else if (root.searchOpen)
+                                root.closeSearch();
+                            else if (root.detailMode !== "")
+                                root.detailMode = "";
                             else
                                 root.open = false;
                             e.accepted = true;
+                        } else if (e.key === Qt.Key_Slash && !root.settingsOpen && !root.monthPickerOpen) {
+                            root.openSearch();
+                            e.accepted = true;
                         } else if (e.key === Qt.Key_M && !root.settingsOpen) {
                             root.toggleMonthPicker();
+                            e.accepted = true;
+                        } else if ((e.modifiers & Qt.ShiftModifier) && e.key === Qt.Key_Left && !root.settingsOpen) {
+                            root.selectDayOffset(-1);
+                            e.accepted = true;
+                        } else if ((e.modifiers & Qt.ShiftModifier) && e.key === Qt.Key_Right && !root.settingsOpen) {
+                            root.selectDayOffset(1);
+                            e.accepted = true;
+                        } else if ((e.modifiers & Qt.ShiftModifier) && e.key === Qt.Key_Up && !root.settingsOpen) {
+                            root.selectDayOffset(-7);
+                            e.accepted = true;
+                        } else if ((e.modifiers & Qt.ShiftModifier) && e.key === Qt.Key_Down && !root.settingsOpen) {
+                            root.selectDayOffset(7);
                             e.accepted = true;
                         } else if (e.key === Qt.Key_Left && !root.settingsOpen) {
                             root.setMonth(root.calYear, root.calMonth - 1);
@@ -587,6 +658,7 @@ ShellRoot {
                             dim: th.dim
                             cardBg: th.cardBot
                             font: th.font
+                            onClicked: root.openDetail("moon")
                         }
 
                         // ── weather under the lunar line ──
@@ -599,8 +671,9 @@ ShellRoot {
                             accent: th.accent
                             bright: th.bright
                             dim: th.dim
+                            warn: th.warn
                             font: th.font
-                            onClicked: root.settingsOpen = true
+                            onClicked: root.openDetail("weather")
                         }
 
                         // ── month + selected-day tasks ──
@@ -937,19 +1010,39 @@ ShellRoot {
                                             }
                                         }
 
-                                        Text {
+                                        Row {
                                             anchors.right: parent.right
                                             anchors.verticalCenter: parent.verticalCenter
-                                            text: "open todo \u2197"
-                                            color: openHover.hovered ? th.accent : root.a(th.dim, 0.8)
-                                            font.family: th.font
-                                            font.pixelSize: 8
-                                            HoverHandler { id: openHover }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                anchors.margins: -4
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: root.openTodo()
+                                            spacing: 9
+
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: "\u2315"
+                                                color: searchHover.hovered ? th.accent : root.a(th.dim, 0.8)
+                                                font.family: th.font
+                                                font.pixelSize: 12
+                                                HoverHandler { id: searchHover }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    anchors.margins: -5
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    Accessible.name: "Search tasks"
+                                                    onClicked: root.openSearch()
+                                                }
+                                            }
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: "open todo \u2197"
+                                                color: openHover.hovered ? th.accent : root.a(th.dim, 0.8)
+                                                font.family: th.font
+                                                font.pixelSize: 8
+                                                HoverHandler { id: openHover }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    anchors.margins: -4
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: root.openTodo()
+                                                }
                                             }
                                         }
                                     }
@@ -1026,6 +1119,31 @@ ShellRoot {
                                             anchors.fill: parent
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: if (store.nextUp) root.selectTask(store.nextUp)
+                                        }
+                                    }
+
+                                    SearchPanel {
+                                        id: searchPanel
+                                        anchors.fill: parent
+                                        active: root.searchOpen
+                                        store: store
+                                        nowMs: root.now.getTime()
+                                        accent: th.accent
+                                        warn: th.warn
+                                        bright: th.bright
+                                        dim: th.dim
+                                        cardBg: th.cardBot
+                                        font: th.font
+                                        cornerRadius: th.radius
+                                        highContrast: cfg.highContrast
+                                        onClosed: root.closeSearch()
+                                        onTaskActivated: function (task) {
+                                            root.searchOpen = false;
+                                            if (task && task.due > 0)
+                                                root.selectTask(task);
+                                            else
+                                                root.openTodo();
+                                            Qt.callLater(focusScope.forceActiveFocus);
                                         }
                                     }
 
@@ -1128,6 +1246,22 @@ ShellRoot {
                         }
                     }
                 }
+            // ── moon and weather detail cards ──
+            DetailOverlay {
+                id: detailOverlay
+                anchors.fill: parent
+                mode: root.detailMode
+                wx: wx
+                accent: th.accent
+                warn: th.warn
+                bright: th.bright
+                dim: th.dim
+                cardBg: th.cardBot
+                font: th.font
+                highContrast: cfg.highContrast
+                onClosed: root.detailMode = ""
+            }
+
             // ── settings sheet ──
             SettingsSheet {
                 id: settingsSheet

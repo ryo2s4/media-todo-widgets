@@ -12,7 +12,12 @@ Item {
     property color cardBg: "#0f1417"
     property string font: "JetBrainsMono Nerd Font"
 
+    signal clicked()
+
     implicitHeight: 48
+
+    Accessible.role: Accessible.Button
+    Accessible.name: "Moon phase details"
 
     readonly property real trackX: 10
     readonly property real trackW: Math.max(1, width - trackX * 2)
@@ -147,5 +152,11 @@ Item {
         color: ml.a(ml.dim, 0.8)
         font.family: ml.font
         font.pixelSize: 7
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        onClicked: ml.clicked()
     }
 }
