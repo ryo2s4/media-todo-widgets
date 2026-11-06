@@ -161,7 +161,7 @@ Item {
                     from: 520
                     to: 900
                     step: 10
-                    value: sheet.cfg ? sheet.cfg.panelWidth : 800
+                    value: sheet.cfg ? sheet.cfg.panelWidth : 640
                     accent: sheet.accent
                     dim: sheet.dim
                     font: sheet.font
@@ -174,9 +174,9 @@ Item {
 
                     Repeater {
                         model: [
-                            { label: "S", size: 600 },
-                            { label: "M", size: 720 },
-                            { label: "L", size: 840 }
+                            { label: "S", size: 560 },
+                            { label: "M", size: 640 },
+                            { label: "L", size: 800 }
                         ]
                         delegate: Rectangle {
                             id: preset

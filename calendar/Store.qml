@@ -15,6 +15,8 @@ Scope {
     property var tasks: []
     property bool loaded: false
     property int rev: 0
+    // Ticked by shell.qml's clock so overdue/progress bindings age correctly.
+    property double nowMs: Date.now()
 
     readonly property var dayNames: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     readonly property var monthNames: ["January", "February", "March", "April", "May", "June",
@@ -39,6 +41,18 @@ Scope {
             return "";
         var d = new Date(ms);
         return pad(d.getHours()) + ":" + pad(d.getMinutes());
+    }
+    function whenLabel(ms) {
+        if (!(ms > 0))
+            return "";
+        var k = dayKey(ms);
+        var time = isDateOnly(ms) ? "all day" : timeLabel(ms);
+        if (k === todayKey())
+            return "today " + time;
+        return dayTitle(k) + " " + time;
+    }
+    function isOverdueTask(t) {
+        return !!t && !t.done && t.due > 0 && t.due < nowMs;
     }
     function dayTitle(key) {
         var p = String(key).split("-");
@@ -76,31 +90,73 @@ Scope {
 
     function tasksOn(key) { return byDay[key] || []; }
     function countOn(key) { var a = byDay[key]; return a ? a.length : 0; }
-    function countMonth(year, month) {
-        var n = 0;
-        for (var i = 0; i < tasks.length; i++) {
-            var d = new Date(tasks[i].due);
-            if (tasks[i].due > 0 && d.getFullYear() === year && d.getMonth() === month)
-                n++;
+
+    // One derived snapshot per day for the grid and its hover card.
+    function statsOn(key) {
+        var list = byDay[key] || [];
+        var done = 0;
+        var overdue = 0;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].done)
+                done++;
+            else if (isOverdueTask(list[i]))
+                overdue++;
         }
-        return n;
+        return {
+            total: list.length,
+            done: done,
+            open: list.length - done,
+            overdue: overdue,
+            ratio: list.length > 0 ? done / list.length : 0,
+            allDone: list.length > 0 && done === list.length
+        };
     }
-    function countOverdue() {
-        var n = 0;
-        var now = Date.now();
+
+    function monthStats(year, month) {
+        var total = 0;
+        var done = 0;
+        var overdue = 0;
+        for (var i = 0; i < tasks.length; i++) {
+            var t = tasks[i];
+            if (!(t.due > 0))
+                continue;
+            var d = new Date(t.due);
+            if (d.getFullYear() !== year || d.getMonth() !== month)
+                continue;
+            total++;
+            if (t.done)
+                done++;
+            else if (isOverdueTask(t))
+                overdue++;
+        }
+        return { total: total, done: done, open: total - done, overdue: overdue };
+    }
+
+    function countMonth(year, month) { return monthStats(year, month).total; }
+
+    readonly property var overdueTasks: {
+        var out = [];
         for (var i = 0; i < tasks.length; i++)
-            if (tasks[i].due > 0 && !tasks[i].done && tasks[i].due < now)
-                n++;
-        return n;
+            if (isOverdueTask(tasks[i]))
+                out.push(tasks[i]);
+        out.sort(function (a, b) { return a.due - b.due; });
+        return out;
     }
-    function countToday() {
-        var n = 0;
-        var k = todayKey();
-        for (var i = 0; i < tasks.length; i++)
-            if (tasks[i].due > 0 && !tasks[i].done && dayKey(tasks[i].due) === k)
-                n++;
-        return n;
+    readonly property int overdueCount: overdueTasks.length
+    readonly property int todayOpen: statsOn(todayKey()).open
+    readonly property var nextUp: {
+        var best = null;
+        for (var i = 0; i < tasks.length; i++) {
+            var t = tasks[i];
+            if (t.done || !(t.due > 0) || t.due < nowMs)
+                continue;
+            if (best === null || t.due < best.due)
+                best = t;
+        }
+        return best;
     }
+    function countOverdue() { return overdueCount; }
+    function countToday() { return todayOpen; }
 
     function _load(raw) {
         try {

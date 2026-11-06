@@ -12,7 +12,7 @@ Scope {
     property string gif: ""              // absolute path, ~/path, or file:// URL
     property string city: ""             // empty = guess from the IP address
     property string units: "c"           // "c" | "f"
-    property int panelWidth: 800
+    property int panelWidth: 640
     property real panelOpacity: 1.0
     property string accentOverride: ""   // "#rrggbb", empty = Ryoku palette
     property bool autoLayout: true       // compact / comfortable / roomy by size

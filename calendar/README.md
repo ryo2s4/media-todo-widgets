@@ -8,7 +8,8 @@ under the month.
 ```
 shell.qml         window, square layout, adaptive metrics, keyboard, todo bridge
 Store.qml         reads todo/tasks.json (read-only) and groups tasks by day
-CalendarGrid.qml  compact month grid; due times in the day cells
+CalendarGrid.qml  compact month grid; counts, overdue/done tone, hover detail
+MonthPicker.qml   compact month/year chooser over the month card
 MoonLine.qml      lunar-month progress line and phase marker
 Moon.qml          real phase drawing (no image set)
 WeatherStrip.qml  compact weather row under the moon line
@@ -19,7 +20,7 @@ SettingSlider.qml theme-matched size/opacity slider
 SettingField.qml  labelled single-line settings field
 Toggle.qml        small pill switch for the boolean settings
 IconBtn.qml       header and month-navigation buttons
-StatChip.qml      today/month counters in the header
+StatChip.qml      clickable today/overdue/month counters
 ```
 
 Run: `qs -c calendar`
@@ -31,21 +32,30 @@ The installer binds `SUPER + ALT + C` to `~/.local/bin/calendar-toggle`.
 ## Layout
 
 - **Header**: a date badge, a large 24-hour clock, the date with its ISO week,
-  today and month counters, then settings and close buttons. The card drops out
-  from under the Ryoku top bar at the top-right of the focused monitor.
+  today/overdue/month chips, then settings and close buttons. Today jumps to the
+  current day; overdue jumps to the oldest overdue day; month opens the picker.
+  The card drops out from under the Ryoku top bar at the top-right of the focused
+  monitor.
 - **Lunar line**: nine small phase moons mark the synodic cycle. The accent
   track fills to the current moon age, and a larger moon marker travels with it;
   the marker's lit shape, the phase name, illumination and lunar day all follow
   the real phase. Weather sits directly below the line.
-- **Month card**: the grid is compact. Each day shows up to two due times (or
-  `all` for an all-day task) and a small count when more are hidden. Today has a
-  filled dot and the selected day has an accent border. Done tasks stay visible,
-  dimmed and struck through.
-- **Tasks card**: the selected day's full list. The circle on the left checks a
-  task off; the title opens the todo panel; the time line shows the due time (or
-  `all day`). The list scrolls when it fills. The quick-add row at the bottom
-  sends a task to the todo panel for the selected day. Type a title, optionally
-  a time (`18:00`), press Enter. Leave the time empty for an all-day task.
+- **Month card**: the grid is compact. Every busy day shows a count; the tint is
+  accent for open work, warm for overdue and quiet when everything is done. Each
+  day still shows up to two due times (or `all` for an all-day task), with done
+  lines dimmed and struck through. Hovering a busy day opens a read-only detail
+  card with its done/open/overdue summary, progress bar and next four tasks.
+  Today has a filled dot, the selected day an accent border. Click the month
+  name/year or the `M` key for the month/year picker; click outside or close it
+  to return.
+- **Tasks card**: the selected day's full list. The header shows done/total and
+  any overdue count, with a completion bar underneath. The `NEXT` row shows the
+  next upcoming task across the whole board; click it to jump to that day. The
+  circle on the left checks a task off; the title opens the todo panel; the time
+  line shows the due time (or `all day`). The list scrolls when it fills. The
+  quick-add row at the bottom sends a task to the todo panel for the selected
+  day. Type a title, optionally a time (`18:00`), press Enter. Leave the time
+  empty for an all-day task.
 - **Gif**: one square tile under the month, aspect-cropped rather than stretched.
   Click it to set a path in Settings.
 
@@ -73,7 +83,7 @@ Click the gear in the header, the weather strip, or the gif tile for Settings.
 The sheet is a compact two-column layout and stays fully visible at the 520 px
 minimum size. It controls:
 
-- **Panel size**: a 520–900 px slider plus S/M/L presets (600/720/840).
+- **Panel size**: a 520–900 px slider plus S/M/L presets (560/640/800).
 - **Opacity**: 50–100%.
 - **Fit layout to panel size**: picks compact, comfortable or roomy metrics
   automatically, with 10 px hysteresis at the 660/780 px thresholds.
@@ -91,8 +101,9 @@ their defaults (`autoLayout: true`, `reducedMotion: false`,
 `highContrast: false`) and are added on the next save.
 
 The card is square: `panelWidth` in `settings.json` sets both dimensions. The
-default is 800 px and the range is 520–900 px. The layout is drawn on a 560 px
-canvas and scaled uniformly with the card, so type and controls grow with it.
+default is now 640 px (the earlier 800 px version felt too large) and the range
+is 520–900 px. The layout is drawn on a 560 px canvas and scaled uniformly with
+the card, so type and controls grow with it.
 Automatic fitting uses compact metrics below 660 px, comfortable metrics from
 660–779 px, and roomy metrics at 780 px and above; the 10 px hysteresis stops a
 card near a threshold from flipping back and forth. Turn the toggle off to keep
