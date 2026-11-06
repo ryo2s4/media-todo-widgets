@@ -9,8 +9,8 @@ import Quickshell.Wayland
 //   run:    qs -c calendar
 //   toggle: qs -c calendar ipc call calendar toggle
 // A month of todo due-dates, then the moon, clock and weather, then a gif.
-// The calendar only reads tasks.json; new and completed tasks go through the
-// todo panel's IPC so both widgets agree on the file.
+// The calendar is a viewer: it reads tasks.json and shows the selected day's
+// list. Adding, completing and rescheduling stay in the todo panel.
 ShellRoot {
     PanelWindow {
         id: root
@@ -52,7 +52,6 @@ ShellRoot {
         readonly property int taskHeadH: compact ? 26 : roomy ? 30 : 28
         readonly property int titleSize: compact ? 12 : roomy ? 14 : 13
         readonly property int subSize: compact ? 7 : 8
-        readonly property int addH: compact ? 32 : roomy ? 36 : 34
         readonly property int animFast: cfg.reducedMotion ? 0 : 140
         readonly property int animBase: cfg.reducedMotion ? 0 : 280
         readonly property int animSlow: cfg.reducedMotion ? 0 : 420
@@ -220,7 +219,6 @@ ShellRoot {
             running: true
             onTriggered: root.now = new Date()
         }
-
         Settings { id: cfg }
         Connections {
             target: cfg
@@ -352,60 +350,11 @@ ShellRoot {
         }
 
         // ───────── todo bridge ─────────
-        Process {
-            id: addProc
-            property string pendingTitle: ""
-            onExited: function (code) {
-                if (code !== 0 && pendingTitle !== "" && addIn.text === "")
-                    addIn.text = pendingTitle;
-                pendingTitle = "";
-                if (addIn.text === "")
-                    addIn.forceActiveFocus();
-            }
-        }
-        Process {
-            id: toggleProc
-        }
+        // The calendar is a viewer. It only opens the todo panel; it never
+        // adds, completes or reschedules a task itself.
         Process {
             id: todoProc
             command: ["qs", "-c", "todo", "ipc", "call", "todo", "open"]
-        }
-
-        function addTask() {
-            var title = addIn.text.trim();
-            if (title === "")
-                return;
-            if (addProc.running)
-                return;
-            var p = String(root.selectedKey).split("-");
-            var hh = 23;
-            var mm = 59;
-            var t = timeIn.text.trim();
-            if (t !== "") {
-                var m = /^(\d{1,2}):(\d{2})$/.exec(t);
-                if (m === null) {
-                    timeIn.focus = true;
-                    return;
-                }
-                hh = Number(m[1]);
-                mm = Number(m[2]);
-                if (hh > 23 || mm > 59) {
-                    timeIn.focus = true;
-                    return;
-                }
-            }
-            var when = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), hh, mm, 0, 0).getTime();
-            addProc.pendingTitle = title;
-            addProc.command = ["qs", "-c", "todo", "ipc", "call", "todo", "addTask", title, String(when)];
-            addProc.running = true;
-            addIn.text = "";
-        }
-
-        function toggleTask(id) {
-            if (toggleProc.running)
-                return;
-            toggleProc.command = ["qs", "-c", "todo", "ipc", "call", "todo", "toggleTask", String(id)];
-            toggleProc.running = true;
         }
 
         function openTodo() {
@@ -475,16 +424,16 @@ ShellRoot {
                             else
                                 root.open = false;
                             e.accepted = true;
-                        } else if (e.key === Qt.Key_M && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
+                        } else if (e.key === Qt.Key_M && !root.settingsOpen) {
                             root.toggleMonthPicker();
                             e.accepted = true;
-                        } else if (e.key === Qt.Key_Left && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
+                        } else if (e.key === Qt.Key_Left && !root.settingsOpen) {
                             root.setMonth(root.calYear, root.calMonth - 1);
                             e.accepted = true;
-                        } else if (e.key === Qt.Key_Right && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
+                        } else if (e.key === Qt.Key_Right && !root.settingsOpen) {
                             root.setMonth(root.calYear, root.calMonth + 1);
                             e.accepted = true;
-                        } else if (e.key === Qt.Key_T && !addIn.activeFocus && !timeIn.activeFocus && !root.settingsOpen) {
+                        } else if (e.key === Qt.Key_T && !root.settingsOpen) {
                             root.goToday();
                             e.accepted = true;
                         }
@@ -1085,7 +1034,7 @@ ShellRoot {
                                         x: 10
                                         y: nextRow.visible ? nextRow.y + nextRow.height + 6 : taskProgress.y + 8
                                         width: parent.width - 20
-                                        height: parent.height - y - (root.addH + 26)
+                                        height: parent.height - y - 12
                                         contentWidth: width
                                         contentHeight: taskCol.height
                                         boundsBehavior: Flickable.StopAtBounds
@@ -1127,178 +1076,53 @@ ShellRoot {
                                                 }
                                             }
 
-                                            Repeater {
-                                                model: store.tasksOn(root.selectedKey)
-                                                delegate: Item {
-                                                    id: taskRow
-                                                    required property var modelData
-                                                    readonly property var task: modelData
-                                                    readonly property bool overdue: !task.done && task.due < root.now.getTime()
+                                            TaskSection {
+                                                tasks: store.overdueOn(root.selectedKey)
+                                                store: store
+                                                nowMs: root.now.getTime()
+                                                accent: th.accent
+                                                warn: th.warn
+                                                bright: th.bright
+                                                dim: th.dim
+                                                cardBg: th.cardBot
+                                                tone: th.warn
+                                                title: "OVERDUE"
+                                                font: th.font
+                                                onOpenRequested: root.openTodo()
+                                            }
 
-                                                    width: taskCol.width
-                                                    height: 34
+                                            TaskSection {
+                                                tasks: store.openOn(root.selectedKey)
+                                                store: store
+                                                nowMs: root.now.getTime()
+                                                accent: th.accent
+                                                warn: th.warn
+                                                bright: th.bright
+                                                dim: th.dim
+                                                cardBg: th.cardBot
+                                                tone: th.accent
+                                                title: "OPEN"
+                                                font: th.font
+                                                onOpenRequested: root.openTodo()
+                                            }
 
-                                                    Rectangle {
-                                                        anchors.fill: parent
-                                                        anchors.margins: 1
-                                                        radius: 5
-                                                        color: rowHover.hovered ? root.a(th.dim, 0.06) : "transparent"
-                                                    }
-
-                                                    Rectangle {
-                                                        x: 2
-                                                        y: 10
-                                                        width: 14
-                                                        height: 14
-                                                        radius: 7
-                                                        color: taskRow.task.done ? root.a(th.accent, 0.85) : "transparent"
-                                                        border.width: 1
-                                                        border.color: taskRow.task.done ? th.accent
-                                                            : taskRow.overdue ? th.warn : root.a(th.dim, 0.55)
-                                                        Text {
-                                                            anchors.centerIn: parent
-                                                            visible: taskRow.task.done
-                                                            text: "\u2713"
-                                                            color: th.cardBot
-                                                            font.family: th.font
-                                                            font.pixelSize: 8
-                                                            font.bold: true
-                                                        }
-                                                        MouseArea {
-                                                            anchors.fill: parent
-                                                            anchors.margins: -5
-                                                            cursorShape: Qt.PointingHandCursor
-                                                            onClicked: root.toggleTask(taskRow.task.ord)
-                                                        }
-                                                    }
-
-                                                    Text {
-                                                        x: 24
-                                                        y: 3
-                                                        width: parent.width - 28
-                                                        text: taskRow.task.text
-                                                        color: taskRow.task.done ? root.a(th.dim, 0.5) : th.bright
-                                                        elide: Text.ElideRight
-                                                        font.family: th.font
-                                                        font.pixelSize: 10
-                                                        font.strikeout: taskRow.task.done
-                                                    }
-                                                    Text {
-                                                        x: 24
-                                                        y: 19
-                                                        width: parent.width - 28
-                                                        text: store.isDateOnly(taskRow.task.due) ? "all day" : store.timeLabel(taskRow.task.due)
-                                                        color: taskRow.task.done ? root.a(th.dim, 0.4)
-                                                            : taskRow.overdue ? th.warn : root.a(th.dim, 0.8)
-                                                        elide: Text.ElideRight
-                                                        font.family: th.font
-                                                        font.pixelSize: 8
-                                                    }
-
-                                                    HoverHandler { id: rowHover }
-
-                                                    MouseArea {
-                                                        x: 24
-                                                        y: 0
-                                                        width: parent.width - 24
-                                                        height: parent.height
-                                                        cursorShape: Qt.PointingHandCursor
-                                                        onClicked: root.openTodo()
-                                                    }
-                                                }
+                                            TaskSection {
+                                                tasks: store.doneOn(root.selectedKey)
+                                                store: store
+                                                nowMs: root.now.getTime()
+                                                accent: th.accent
+                                                warn: th.warn
+                                                bright: th.bright
+                                                dim: th.dim
+                                                cardBg: th.cardBot
+                                                tone: th.dim
+                                                title: "DONE"
+                                                font: th.font
+                                                onOpenRequested: root.openTodo()
                                             }
                                         }
                                     }
 
-                                    Rectangle {
-                                        id: addBox
-                                        x: 10
-                                        y: parent.height - root.addH - 20
-                                        width: parent.width - 20
-                                        height: root.addH
-                                        radius: 7
-                                        color: root.a(th.dim, 0.06)
-                                        border.width: root.hairline
-                                        border.color: (addIn.activeFocus || timeIn.activeFocus)
-                                            ? th.accent : root.a(th.dim, cfg.highContrast ? 0.45 : 0.18)
-
-                                        Text {
-                                            x: 9
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            text: "+"
-                                            color: th.accent
-                                            font.family: th.font
-                                            font.pixelSize: 13
-                                            font.bold: true
-                                        }
-                                        TextInput {
-                                            id: addIn
-                                            x: 24
-                                            width: parent.width - 24 - 42 - 8
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            color: th.bright
-                                            selectionColor: root.a(th.accent, 0.45)
-                                            selectedTextColor: th.bright
-                                            font.family: th.font
-                                            font.pixelSize: 9
-                                            clip: true
-                                            onAccepted: root.addTask()
-                                        }
-                                        Text {
-                                            x: 24
-                                            width: addIn.width
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            visible: addIn.text === ""
-                                            text: "add a task\u2026"
-                                            color: root.a(th.dim, 0.55)
-                                            elide: Text.ElideRight
-                                            font.family: th.font
-                                            font.pixelSize: 9
-                                        }
-                                        Rectangle {
-                                            x: timeIn.x - 5
-                                            width: 1
-                                            height: 16
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            color: root.a(th.dim, 0.18)
-                                        }
-                                        TextInput {
-                                            id: timeIn
-                                            width: 34
-                                            anchors.right: parent.right
-                                            anchors.rightMargin: 8
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            horizontalAlignment: TextInput.AlignHCenter
-                                            color: th.bright
-                                            selectionColor: root.a(th.accent, 0.45)
-                                            selectedTextColor: th.bright
-                                            font.family: th.font
-                                            font.pixelSize: 8
-                                            clip: true
-                                            onAccepted: root.addTask()
-                                        }
-                                        Text {
-                                            width: timeIn.width
-                                            anchors.right: parent.right
-                                            anchors.rightMargin: 8
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            horizontalAlignment: Text.AlignHCenter
-                                            visible: timeIn.text === ""
-                                            text: "18:00"
-                                            color: root.a(th.dim, 0.55)
-                                            font.family: th.font
-                                            font.pixelSize: 8
-                                        }
-                                    }
-
-                                    Text {
-                                        x: 10
-                                        y: parent.height - 16
-                                        text: "time empty = all day"
-                                        color: root.a(th.dim, 0.5)
-                                        font.family: th.font
-                                        font.pixelSize: 7
-                                    }
                                 }
                             }
                         }

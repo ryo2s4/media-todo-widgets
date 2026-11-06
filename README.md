@@ -37,11 +37,12 @@ If Hyprland does not see a new keybind immediately, run `hyprctl reload`.
 `calendar/` is a square card at the top-right of the focused monitor. It reads
 the todo board's `tasks.json` live (read-only): the compact month grid shows due
 times and task counts on their days, and the task column beside it holds the
-selected day's full list. Busy days are tinted for open work, overdue work or
-all-done days; hovering one opens a small summary and task preview. The header
-chips jump to today or the oldest overdue day, and the month name opens a
-month/year picker. Adding a task or checking one off goes through the todo
-panel's IPC, so the todo board remains the single writer.
+selected day's full list, grouped overdue/open/done. Busy days are tinted for
+open work, overdue work or all-done days; hovering one opens a small summary
+and task preview. The header chips jump to today or the oldest overdue day,
+and the month name opens a month/year picker. The calendar is a viewer:
+adding, completing and rescheduling stay in the todo panel, which remains the
+single writer.
 
 The clock sits at the top; underneath it a lunar-month line moves with the real
 moon's age and changes its phase shape as the month turns. Weather (Open-Meteo;
@@ -51,17 +52,18 @@ the header) or edit `~/.config/quickshell/calendar/settings.json`. No gif is
 bundled (paths and copyright), so the slot shows a clickable placeholder until
 you choose one.
 
-The card is resizable from 520–900 px (640 px by default, with S/M/L presets
-560/640/800). The task column shows a completion bar and a `NEXT` row for the
-next upcoming task across the board; click it to jump to that day. The settings
-sheet also has opacity, automatic compact/comfortable/roomy layout, reduced
+The card is resizable from 520–900 px (700 px by default, with S/M/L presets
+560/700/800). The task column shows a completion bar, a `NEXT` row for the next
+upcoming task across the board, and repeat/tag metadata on each row; click the
+`NEXT` row to jump to that day. The settings sheet also has opacity, automatic
+compact/comfortable/roomy layout, reduced
 motion, high contrast, accent override and weather units. Existing settings
 files migrate forward automatically; the installer still preserves the whole
 `calendar/settings.json`.
 
-The todo board supports due dates and times today: in quick-add use
+The todo board supports due dates and times: in quick-add use
 `Call the bank @tomorrow 17:30`, or edit a task and put `tomorrow 17:30` in the
-Due field. The calendar's quick-add creates the same values with a click.
+Due field. The calendar only displays the result.
 
 ## Data
 

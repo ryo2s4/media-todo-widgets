@@ -21,6 +21,8 @@ SettingField.qml  labelled single-line settings field
 Toggle.qml        small pill switch for the boolean settings
 IconBtn.qml       header and month-navigation buttons
 StatChip.qml      clickable today/overdue/month counters
+TaskSection.qml   read-only OVERDUE / OPEN / DONE group
+TaskRow.qml       one task line with status, repeat and tags
 ```
 
 Run: `qs -c calendar`
@@ -48,24 +50,20 @@ The installer binds `SUPER + ALT + C` to `~/.local/bin/calendar-toggle`.
   Today has a filled dot, the selected day an accent border. Click the month
   name/year or the `M` key for the month/year picker; click outside or close it
   to return.
-- **Tasks card**: the selected day's full list. The header shows done/total and
-  any overdue count, with a completion bar underneath. The `NEXT` row shows the
-  next upcoming task across the whole board; click it to jump to that day. The
-  circle on the left checks a task off; the title opens the todo panel; the time
-  line shows the due time (or `all day`). The list scrolls when it fills. The
-  quick-add row at the bottom sends a task to the todo panel for the selected
-  day. Type a title, optionally a time (`18:00`), press Enter. Leave the time
-  empty for an all-day task.
+- **Tasks card**: the selected day's full list, grouped `OVERDUE`, `OPEN` and
+  `DONE`. The header shows done/total and any overdue count, with a completion
+  bar underneath. The `NEXT` row shows the next upcoming task across the whole
+  board; click it to jump to that day. Each row has a read-only status dot, the
+  title, and the due time (or `all day`) plus repeat/tag metadata. Clicking
+  the title opens the todo panel. The list scrolls when it fills. The calendar
+  is a viewer: it has no add or check-off controls.
 - **Gif**: one square tile under the month, aspect-cropped rather than stretched.
   Click it to set a path in Settings.
 
-The panel never writes `tasks.json`. Adding and completing go through
-`qs -c todo ipc call todo addTask/toggleTask`, so the todo board remains the
-only writer and both widgets always agree.
-
-The todo board already accepts due dates and times when editing a task:
-the Due field understands `today 17:30`, `tomorrow`, `fri`, `2026-11-12 09:00`
-and `17:30`. Quick-add accepts the same with `@`.
+The panel never writes `tasks.json` and never adds or checks off a task. Those
+actions stay in the todo panel, which remains the only writer and the place to
+change due dates or reschedule. The todo quick-add accepts `@tomorrow 17:30`;
+the calendar simply shows the resulting day and time.
 
 ## Moon and weather
 
@@ -83,7 +81,7 @@ Click the gear in the header, the weather strip, or the gif tile for Settings.
 The sheet is a compact two-column layout and stays fully visible at the 520 px
 minimum size. It controls:
 
-- **Panel size**: a 520–900 px slider plus S/M/L presets (560/640/800).
+- **Panel size**: a 520–900 px slider plus S/M/L presets (560/700/800).
 - **Opacity**: 50–100%.
 - **Fit layout to panel size**: picks compact, comfortable or roomy metrics
   automatically, with 10 px hysteresis at the 660/780 px thresholds.
@@ -101,9 +99,8 @@ their defaults (`autoLayout: true`, `reducedMotion: false`,
 `highContrast: false`) and are added on the next save.
 
 The card is square: `panelWidth` in `settings.json` sets both dimensions. The
-default is now 640 px (the earlier 800 px version felt too large) and the range
-is 520–900 px. The layout is drawn on a 560 px canvas and scaled uniformly with
-the card, so type and controls grow with it.
+default is 700 px and the range is 520–900 px. The layout is drawn on a 560 px
+canvas and scaled uniformly with the card, so type and controls grow with it.
 Automatic fitting uses compact metrics below 660 px, comfortable metrics from
 660–779 px, and roomy metrics at 780 px and above; the 10 px hysteresis stops a
 card near a threshold from flipping back and forth. Turn the toggle off to keep

@@ -3,8 +3,8 @@ import Quickshell
 import Quickshell.Io
 
 // Store.qml: a read-only window onto the todo board's tasks.json.
-// The calendar never writes the file; adding and completing tasks goes through
-// `qs -c todo ipc call ...`, so the todo panel stays the single writer.
+// The calendar never writes the file and has no add/check controls; the todo
+// panel stays the single writer for adding, completing and rescheduling.
 Scope {
     id: st
 
@@ -90,6 +90,31 @@ Scope {
 
     function tasksOn(key) { return byDay[key] || []; }
     function countOn(key) { var a = byDay[key]; return a ? a.length : 0; }
+
+    function overdueOn(key) {
+        var list = byDay[key] || [];
+        var out = [];
+        for (var i = 0; i < list.length; i++)
+            if (isOverdueTask(list[i]))
+                out.push(list[i]);
+        return out;
+    }
+    function openOn(key) {
+        var list = byDay[key] || [];
+        var out = [];
+        for (var i = 0; i < list.length; i++)
+            if (!list[i].done && !isOverdueTask(list[i]))
+                out.push(list[i]);
+        return out;
+    }
+    function doneOn(key) {
+        var list = byDay[key] || [];
+        var out = [];
+        for (var i = 0; i < list.length; i++)
+            if (list[i].done)
+                out.push(list[i]);
+        return out;
+    }
 
     // One derived snapshot per day for the grid and its hover card.
     function statsOn(key) {

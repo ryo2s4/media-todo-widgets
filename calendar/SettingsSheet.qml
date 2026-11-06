@@ -161,7 +161,7 @@ Item {
                     from: 520
                     to: 900
                     step: 10
-                    value: sheet.cfg ? sheet.cfg.panelWidth : 640
+                    value: sheet.cfg ? sheet.cfg.panelWidth : 700
                     accent: sheet.accent
                     dim: sheet.dim
                     font: sheet.font
@@ -175,7 +175,7 @@ Item {
                     Repeater {
                         model: [
                             { label: "S", size: 560 },
-                            { label: "M", size: 640 },
+                            { label: "M", size: 700 },
                             { label: "L", size: 800 }
                         ]
                         delegate: Rectangle {
@@ -493,7 +493,7 @@ Item {
 
                 Text {
                     width: parent.width
-                    text: "The calendar reads your todo list live. New tasks and checkmarks go through the todo panel, so both stay in sync. Nothing here writes tasks.json."
+                    text: "The calendar reads your todo list live and only displays it. Adding, completing and rescheduling stay in the todo panel. Nothing here writes tasks.json."
                     color: sheet.a(sheet.dim, 0.65)
                     font.family: sheet.font
                     font.pixelSize: 8
