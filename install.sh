@@ -134,7 +134,7 @@ end)
 hl.bind("SUPER + S", hl.dsp.exec_cmd("qs -c todo ipc call todo toggle"))
 hl.bind("SUPER + M", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-toggle"))
 hl.bind("SUPER + G", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-toggle"))
-hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/calendar-toggle"))
+hl.bind("SUPER + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/calendar-toggle"))
 EOF
 else
     add_block=0
@@ -173,9 +173,15 @@ hl.bind("SUPER + G", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/media-tog
 EOF
         add_block=1
     fi
-    if ! grep -q 'SUPER + ALT + C' "$HYPR_USER"; then
+    # Older installs used SUPER + ALT + C for the calendar. Move that one
+    # calendar line to the new shortcut without touching other ALT+C binds.
+    if grep -q 'SUPER + ALT + C.*calendar-toggle' "$HYPR_USER"; then
+        sed -i 's/SUPER + ALT + C\(.*calendar-toggle\)/SUPER + C\1/' "$HYPR_USER"
+        add_block=1
+    fi
+    if ! grep -q 'SUPER + C.*calendar-toggle' "$HYPR_USER"; then
         cat >> "$HYPR_USER" << 'EOF'
-hl.bind("SUPER + ALT + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/calendar-toggle"))
+hl.bind("SUPER + C", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.local/bin/calendar-toggle"))
 EOF
         add_block=1
     fi
@@ -184,6 +190,13 @@ EOF
     else
         echo "[*] Startup and keybinds already present"
     fi
+fi
+
+# On Ryoku, SUPER + C also opens the center window. Move that single stock
+# chord out of the calendar's way. Leave a user's existing remap alone.
+if command -v ryoku-hub >/dev/null 2>&1 \
+    && ! grep -q '\["SUPER + C"\]' "$HOME/.config/hypr/rebinds.lua" 2>/dev/null; then
+    ryoku-hub desktop set-rebind "SUPER + C" "SUPER + ALT + C" >/dev/null 2>&1 || true
 fi
 
 # ── start fresh ──────────────────────────────────────────────────────────────
@@ -202,7 +215,7 @@ echo "=== Done ==="
 echo ""
 echo "  SUPER + S        todo"
 echo "  SUPER + M / G    media"
-echo "  SUPER + ALT + C  calendar"
+echo "  SUPER + C        calendar"
 echo ""
 echo "Configs: $INSTALL_DIR/{todo,media,calendar}"
 echo "Launchers: $BIN_DIR/{media,calendar}-toggle"

@@ -32,8 +32,17 @@ Item {
             width: parent.width
             height: 13
 
+            Rectangle {
+                x: 0
+                y: 4
+                width: 2
+                height: 7
+                radius: 1
+                color: section.tone
+                opacity: 0.7
+            }
             Text {
-                x: 2
+                x: 7
                 anchors.verticalCenter: parent.verticalCenter
                 text: section.title
                 color: section.tone
@@ -50,6 +59,13 @@ Item {
                 color: Qt.rgba(section.tone.r, section.tone.g, section.tone.b, 0.75)
                 font.family: section.font
                 font.pixelSize: 7
+            }
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                color: Qt.rgba(section.tone.r, section.tone.g, section.tone.b, 0.10)
             }
         }
 

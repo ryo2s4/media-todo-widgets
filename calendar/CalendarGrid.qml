@@ -18,10 +18,16 @@ Item {
     property color cardBg: "#0f1417"
     property string font: "JetBrainsMono Nerd Font"
     property real cellHeight: 34
+    property bool weekStartsMonday: false
+    property real aura: 0.7
+    property bool highContrast: false
 
     signal dayClicked(string key)
 
-    readonly property int firstDay: new Date(year, month, 1).getDay()
+    readonly property int firstDay: {
+        var d = new Date(year, month, 1).getDay();
+        return weekStartsMonday ? (d + 6) % 7 : d;
+    }
     readonly property int dayCount: new Date(year, month + 1, 0).getDate()
     readonly property real cellWidth: (width - 6) / 7
     readonly property real tipWidth: Math.min(176, width - 8)
@@ -83,7 +89,8 @@ Item {
                 readonly property string key: valid ? grid.keyFor(dayNum) : ""
                 readonly property bool isToday: valid && key === grid.store.todayKey() && grid.nowMs > 0
                 readonly property bool isSelected: valid && key === grid.selectedKey
-                readonly property bool isWeekend: (index % 7) === 0 || (index % 7) === 6
+                readonly property bool isWeekend: grid.weekStartsMonday
+                    ? (index % 7) >= 5 : (index % 7) === 0 || (index % 7) === 6
                 readonly property var stats: valid ? grid.store.statsOn(key) : null
                 readonly property int count: stats ? stats.total : 0
                 readonly property bool anyOverdue: stats ? stats.overdue > 0 : false
@@ -95,13 +102,33 @@ Item {
                 height: grid.cellHeight
 
                 Rectangle {
+                    visible: cell.isSelected
+                    anchors.fill: parent
+                    anchors.margins: -1
+                    radius: 7
+                    color: "transparent"
+                    border.width: grid.highContrast ? 2 : 1
+                    border.color: grid.a(grid.accent, 0.13 + grid.aura * 0.13)
+                }
+
+                Rectangle {
                     anchors.fill: parent
                     anchors.margins: 1
-                    radius: 5
-                    color: cell.isSelected ? grid.a(grid.accent, cell.hovered ? 0.17 : 0.11)
-                        : cell.hovered ? grid.a(grid.dim, 0.07) : "transparent"
+                    radius: 6
+                    color: cell.isSelected ? grid.a(grid.accent, cell.hovered ? 0.18 : 0.105)
+                        : cell.hovered ? grid.a(grid.dim, 0.075) : "transparent"
                     border.width: cell.isSelected ? 1 : 0
-                    border.color: cell.anyOverdue ? grid.a(grid.warn, 0.6) : grid.a(grid.accent, 0.55)
+                    border.color: cell.anyOverdue ? grid.a(grid.warn, 0.60) : grid.a(grid.accent, 0.48 + grid.aura * 0.14)
+                }
+
+                Rectangle {
+                    visible: cell.isToday
+                    anchors.fill: todayDot
+                    anchors.margins: -2
+                    radius: width / 2
+                    color: "transparent"
+                    border.width: 1
+                    border.color: grid.a(grid.accent, 0.24 + grid.aura * 0.22)
                 }
 
                 Rectangle {
@@ -112,7 +139,10 @@ Item {
                     width: 14
                     height: 14
                     radius: width / 2
-                    color: grid.accent
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: grid.accent }
+                        GradientStop { position: 1.0; color: grid.a(grid.accent, 0.62) }
+                    }
                 }
 
                 Text {
@@ -120,7 +150,7 @@ Item {
                     anchors.top: parent.top
                     anchors.leftMargin: cell.isToday ? 2 : 4
                     anchors.topMargin: 2
-                    width: cell.isToday ? todayDot.width : implicitWidth
+                    width: cell.isToday ? 14 : Math.max(0, cell.width - 8)
                     height: 14
                     horizontalAlignment: cell.isToday ? Text.AlignHCenter : Text.AlignLeft
                     verticalAlignment: cell.isToday ? Text.AlignVCenter : Text.AlignTop

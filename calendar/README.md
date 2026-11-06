@@ -2,8 +2,10 @@
 
 A square, top-right calendar for the todo board. The clock leads, a lunar-month
 line moves under it, weather sits below the line, and the month grid shares the
-lower half with the selected day's task list. A single square gif is tucked
-under the month.
+upper body with the selected day's task list. The task card is deliberately
+shorter: a square gif sits underneath it, while the space below the month is a
+reserved skin stage. A single gif and an optional stage image keep the panel
+personal without turning it into a widget editor.
 
 ```
 shell.qml         window, square layout, adaptive metrics, keyboard, todo bridge
@@ -16,9 +18,10 @@ WeatherStrip.qml  compact weather row under the moon line
 Weather.qml       Open-Meteo + IP geolocation, cached in weather.json
 Settings.qml      persisted settings, defaults and migration
 SettingsSheet.qml compact two-column settings overlay
-SettingSlider.qml theme-matched size/opacity slider
+SettingSlider.qml theme-matched size/opacity/glow slider
 SettingField.qml  labelled single-line settings field
-Toggle.qml        small pill switch for the boolean settings
+SettingToggle.qml labelled switch row for boolean settings
+Toggle.qml        small pill switch used by SettingToggle
 IconBtn.qml       header and month-navigation buttons
 StatChip.qml      clickable today/overdue/month counters
 TaskSection.qml   read-only OVERDUE / OPEN / DONE group
@@ -27,45 +30,59 @@ SearchPanel.qml   read-only task search, grouped by due date
 DetailOverlay.qml modal shell for the moon and weather detail cards
 MoonDetail.qml    phase, illumination and next new/full dates
 WeatherDetail.qml current conditions, local hint and three-day outlook
+SkinStage.qml     reserved area under the month, with optional image
+GifTile.qml       framed square gif under the task card
 ```
 
 Run: `qs -c calendar`
 Toggle: `qs -c calendar ipc call calendar toggle`
 Open a day: `qs -c calendar ipc call calendar select 2026-11-07`
 
-The installer binds `SUPER + ALT + C` to `~/.local/bin/calendar-toggle`.
+The installer binds `SUPER + C` to `~/.local/bin/calendar-toggle`. On Ryoku,
+where `SUPER + C` is also the shipped center-window chord, the installer moves
+that action to `SUPER + ALT + C` through the Ryoku keybind store when it has not
+already been remapped. The calendar has a `calendar-toggle` launcher, so either
+the keybind or `qs -c calendar ipc call calendar toggle` works.
 
 ## Layout
 
-- **Header**: a date badge, a large 24-hour clock, the date with its ISO week,
-  today/overdue/month chips, then settings and close buttons. Today jumps to the
-  current day; overdue jumps to the oldest overdue day; month opens the picker.
-  The card drops out from under the Ryoku top bar at the top-right of the focused
-  monitor.
+- **Header**: a date badge, a large clock (12/24-hour, with optional seconds),
+  the date with its ISO week, today/overdue/month chips, then search, settings
+  and close buttons. Today jumps to the current day; overdue jumps to the oldest
+  overdue day; month opens the picker. The card drops out from under the Ryoku
+  bar at the top-right of the focused monitor.
 - **Lunar line**: nine small phase moons mark the synodic cycle. The accent
   track fills to the current moon age, and a larger moon marker travels with it;
   the marker's lit shape, the phase name, illumination and lunar day all follow
-  the real phase. Weather sits directly below the line.
+  the real phase. Weather sits directly below the line. Both strips are
+  optional.
 - **Month card**: the grid is compact. Every busy day shows a count; the tint is
   accent for open work, warm for overdue and quiet when everything is done. Each
   day still shows up to two due times (or `all` for an all-day task), with done
   lines dimmed and struck through. Hovering a busy day opens a read-only detail
   card with its done/open/overdue summary, progress bar and next four tasks.
-  Today has a filled dot, the selected day an accent border. Click the month
-  name/year or the `M` key for the month/year picker; click outside or close it
-  to return.
+  Today has a filled dot, the selected day an accent ring. The week can start on
+  Monday or Sunday. Click the month name/year or the `M` key for the month/year
+  picker; click outside or close it to return.
+- **Skin stage**: the space immediately below the month is reserved for future
+  skins. It has its own quiet card, a placeholder hint, and an optional image
+  (`Skin image` in Settings) so a later skin has a stable home without moving
+  the calendar. The stage can be hidden independently.
 - **Tasks card**: the selected day's full list, grouped `OVERDUE`, `OPEN` and
-  `DONE`. The header shows done/total and any overdue count, with a completion
-  bar underneath. The `NEXT` row shows the next upcoming task across the whole
-  board; click it to jump to that day. Each row has a read-only status dot, the
-  title, and the due time (or `all day`) plus repeat/tag metadata. Clicking
-  the title opens the todo panel. The list scrolls when it fills. The calendar
-  is a viewer: it has no add or check-off controls. The header search glyph or
-  the `/` key opens a read-only search over every task title and tag; results
-  are grouped by due date with undated tasks last. Select a dated result to jump
-  to its day, or an undated result to open the todo panel.
-- **Gif**: one square tile under the month, aspect-cropped rather than stretched.
-  Click it to set a path in Settings.
+  `DONE`. The card is intentionally about month-card height rather than the full
+  panel, leaving room for the gif below it. The header shows done/total and any
+  overdue count, with a completion bar underneath. The optional `NEXT` row shows
+  the next upcoming task across the whole board; click it to jump to that day.
+  Each row has a read-only status dot, the title, and the due time (or
+  `all day`) plus repeat/tag metadata. Clicking the title opens the todo panel.
+  The list scrolls when it fills. The calendar is a viewer: it has no add or
+  check-off controls. The header search glyph or the `/` key opens a read-only
+  search over every task title and tag; results are grouped by due date with
+  undated tasks last. Select a dated result to jump to its day, or an undated
+  result to open the todo panel.
+- **Gif**: one framed square under the task card, aspect-cropped or contained,
+  with a hover frame. It hides without moving the task card. Click it to set a
+  path in Settings.
 
 ## Keys
 
@@ -106,29 +123,34 @@ the calendar simply shows the resulting day and time.
   heads-up (heavy rain, snow, wind, heat, cold or fog) is labelled as a hint,
   never as an official alert.
 
-Click the gear in the header or the gif tile for Settings. The moon line and
-weather strip open their read-only detail cards instead.
+Click the gear in the header, the skin stage, or the gif tile for Settings. The
+moon line and weather strip open their read-only detail cards instead.
 
-The sheet is a compact two-column layout and stays fully visible at the 520 px
-minimum size. It controls:
+The sheet is a compact two-column layout and stays fully visible and scrollable
+at the 520 px minimum size. It controls:
 
 - **Panel size**: a 520–900 px slider plus S/M/L presets (560/700/800).
 - **Opacity**: 50–100%.
+- **Glow**: 0–100% accent wash on the panel, cards and selection rings.
 - **Fit layout to panel size**: picks compact, comfortable or roomy metrics
   automatically, with 10 px hysteresis at the 660/780 px thresholds.
 - **Reduce motion**: stops the card slide and pauses the gif.
 - **High contrast**: brighter secondary text and stronger borders.
-- **Calendar**: accent override (empty uses the Ryoku palette) and the gif path.
-  No gif is bundled (paths and copyright), so the slot shows a clickable
-  placeholder until you pick one.
+- **Skin stage**: reserve the area under the month, set an optional stage image,
+  choose cover/contain and hide the placeholder hint.
+- **Clock & calendar**: 24/12-hour clock, seconds, Monday or Sunday week start,
+  lunar line, weather strip and next-task row visibility.
+- **Accent override**: empty uses the Ryoku palette, or a `#rrggbb` colour.
+- **GIF**: show/hide it, set its path, and choose cover/contain. No gif is
+  bundled (paths and copyright), so the tile shows a clickable placeholder until
+  you choose one.
 - **Weather**: the city (empty = guess from the network), °C/°F, and a reload
   link.
 
 The panel reads `~/.cache/ryoku/colors.json`, so it follows the Ryoku palette and
 accent. Settings are written back to `settings.json` about 400 ms after a change.
-An older file without the three boolean keys still loads; the missing keys use
-their defaults (`autoLayout: true`, `reducedMotion: false`,
-`highContrast: false`) and are added on the next save.
+Older settings files migrate forward: missing keys use their defaults and are
+added on the next save.
 
 The card is square: `panelWidth` in `settings.json` sets both dimensions. The
 default is 700 px and the range is 520–900 px. The layout is drawn on a 560 px
@@ -141,12 +163,13 @@ height, with a 38 px top-bar inset.
 
 ## Dependencies
 
-- `quickshell` (Qt 6)
+- `quickshell` (Qt 6), with `QtQuick.Effects` for the image masks
 - `curl` (weather)
 - a Nerd Font for the weather glyphs (`JetBrainsMono Nerd Font` is used)
+- optional on Ryoku: `ryoku-hub` for moving the stock `SUPER + C` center chord
 
 Tasks live in the todo widget; this panel only reads them.
 
-V1 intentionally leaves out radar/weather-alert feeds, moonrise/set, fuzzy
-search, drag rescheduling and a full screen-reader audit. The search and detail
-views are read-only and never touch `tasks.json`.
+The panel intentionally leaves out radar/weather-alert feeds, moonrise/set,
+fuzzy search, drag rescheduling and a full screen-reader audit. The search and
+detail views are read-only and never touch `tasks.json`.

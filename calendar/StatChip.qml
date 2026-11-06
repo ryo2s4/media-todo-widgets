@@ -15,12 +15,18 @@ Rectangle {
 
     signal clicked()
 
-    implicitWidth: text.implicitWidth + 12
-    implicitHeight: 18
-    radius: 5
-    color: Qt.rgba(tone.r, tone.g, tone.b, hover.containsMouse ? 0.17 : 0.12)
+    implicitWidth: text.implicitWidth + 14
+    implicitHeight: 19
+    radius: 6
+    color: "transparent"
+    gradient: Gradient {
+        GradientStop { position: 0.0; color: Qt.rgba(tone.r, tone.g, tone.b, hover.containsMouse ? 0.20 : 0.14) }
+        GradientStop { position: 1.0; color: Qt.rgba(tone.r, tone.g, tone.b, hover.containsMouse ? 0.08 : 0.045) }
+    }
     border.width: 1
-    border.color: Qt.rgba(tone.r, tone.g, tone.b, hover.containsMouse ? 0.42 : 0.25)
+    border.color: Qt.rgba(tone.r, tone.g, tone.b, hover.containsMouse ? 0.50 : 0.28)
+
+    Behavior on border.color { ColorAnimation { duration: 130 } }
 
     Text {
         id: text
@@ -28,7 +34,7 @@ Rectangle {
         text: (chip.glyph !== "" ? chip.glyph + " " : "") + chip.label
         color: chip.textColor
         font.family: chip.family
-        font.pixelSize: 10
+        font.pixelSize: 9
     }
 
     MouseArea {
@@ -36,7 +42,7 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: chip.interactive
         enabled: chip.interactive
-        cursorShape: Qt.PointingHandCursor
+        cursorShape: chip.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: chip.clicked()
     }
 }

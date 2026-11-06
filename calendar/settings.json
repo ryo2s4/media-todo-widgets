@@ -3,9 +3,22 @@
  "city": "",
  "units": "c",
  "accentOverride": "",
+ "gifFit": "cover",
+ "skinImage": "",
+ "skinFit": "cover",
  "panelWidth": 700,
  "panelOpacity": 1,
+ "aura": 0.7,
  "autoLayout": true,
  "reducedMotion": false,
- "highContrast": false
+ "highContrast": false,
+ "clock24h": true,
+ "showSeconds": true,
+ "weekStartsMonday": false,
+ "showMoonLine": true,
+ "showWeatherStrip": true,
+ "showTaskNext": true,
+ "showGif": true,
+ "showSkinStage": true,
+ "skinHints": true
 }

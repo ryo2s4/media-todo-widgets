@@ -19,6 +19,8 @@ Item {
 
     signal openRequested()
 
+    function a(c, v) { return Qt.rgba(c.r, c.g, c.b, v); }
+
     readonly property bool overdue: !!task && !task.done && task.due > 0 && task.due < nowMs
     readonly property string meta: {
         if (!task)
@@ -42,11 +44,39 @@ Item {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: 5
-        color: rowHover.hovered ? Qt.rgba(dim.r, dim.g, dim.b, 0.06) : "transparent"
+        radius: 6
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: rowHover.hovered ? row.a(row.accent, row.overdue ? 0.075 : 0.055) : "transparent"
+            }
+            GradientStop { position: 1.0; color: "transparent" }
+        }
+    }
+
+    Rectangle {
+        visible: rowHover.hovered
+        x: 1
+        y: 5
+        width: 2
+        height: parent.height - 10
+        radius: 1
+        color: row.overdue ? row.warn : row.a(row.accent, 0.7)
     }
 
     // A status dot, not a checkbox: the calendar cannot change task state.
+    Rectangle {
+        visible: task && !task.done
+        x: 1
+        y: 10
+        width: 10
+        height: 10
+        radius: 5
+        color: "transparent"
+        border.width: 1
+        border.color: row.overdue ? row.a(row.warn, 0.24) : row.a(row.accent, 0.20)
+    }
+
     Rectangle {
         x: 3
         y: 12
@@ -55,13 +85,13 @@ Item {
         radius: 3
         color: task && task.done ? accent
             : row.overdue ? warn : Qt.rgba(dim.r, dim.g, dim.b, 0.55)
-        opacity: task && task.done ? 0.9 : 0.8
+        opacity: task && task.done ? 0.9 : 0.85
     }
 
     Text {
-        x: 16
+        x: 17
         y: 3
-        width: parent.width - 20
+        width: parent.width - (rowHover.hovered ? 29 : 21)
         text: task ? task.text : ""
         color: task && task.done ? Qt.rgba(dim.r, dim.g, dim.b, 0.5) : bright
         elide: Text.ElideRight
@@ -71,9 +101,20 @@ Item {
     }
 
     Text {
-        x: 16
+        visible: rowHover.hovered
+        anchors.right: parent.right
+        anchors.rightMargin: 5
+        y: 4
+        text: "\u2197"
+        color: row.a(row.accent, 0.7)
+        font.family: row.font
+        font.pixelSize: 8
+    }
+
+    Text {
+        x: 17
         y: 19
-        width: parent.width - 20
+        width: parent.width - 21
         text: row.meta
         color: task && task.done ? Qt.rgba(dim.r, dim.g, dim.b, 0.4)
             : row.overdue ? warn : Qt.rgba(dim.r, dim.g, dim.b, 0.8)

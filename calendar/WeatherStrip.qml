@@ -9,6 +9,7 @@ Item {
     property color bright: "#dfe3e7"
     property color dim: "#8b9297"
     property color warn: "#e8a15a"
+    property color cardBg: "#0f1417"
     property string font: "JetBrainsMono Nerd Font"
 
     signal clicked()
@@ -38,25 +39,41 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 7
-        color: strip.a(strip.dim, 0.035)
+        radius: 8
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: strip.a(strip.bright, 0.045) }
+            GradientStop { position: 1.0; color: strip.a(strip.cardBg, 0.10) }
+        }
         border.width: 1
-        border.color: strip.a(strip.dim, 0.12)
+        border.color: strip.a(strip.dim, 0.15)
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.leftMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        width: 26
+        height: 26
+        radius: 8
+        color: strip.a(strip.accent, 0.09)
+        border.width: 1
+        border.color: strip.a(strip.accent, 0.20)
+
+        Text {
+            anchors.centerIn: parent
+            text: strip.glyph(strip.wx ? strip.wx.kind : "", strip.wx ? strip.wx.isDay : true)
+            color: strip.accent
+            font.family: strip.font
+            font.pixelSize: 16
+        }
     }
 
     Row {
         anchors.left: parent.left
-        anchors.leftMargin: 10
+        anchors.leftMargin: 44
         anchors.verticalCenter: parent.verticalCenter
         spacing: 7
 
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: strip.glyph(strip.wx ? strip.wx.kind : "", strip.wx ? strip.wx.isDay : true)
-            color: strip.accent
-            font.family: strip.font
-            font.pixelSize: 18
-        }
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: (strip.wx && strip.wx.ready ? Math.round(strip.wx.temp) : "--") + (strip.wx ? strip.wx.unitSym : "\u00B0C")

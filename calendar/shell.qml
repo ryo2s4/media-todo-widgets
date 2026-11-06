@@ -47,7 +47,7 @@ ShellRoot {
         readonly property int rowGap: compact ? 7 : roomy ? 10 : 8
         readonly property int bodyGap: compact ? 8 : roomy ? 14 : 12
         readonly property int monthH: compact ? 232 : roomy ? 258 : 250
-        readonly property int gifMax: compact ? 96 : roomy ? 104 : 96
+        readonly property int cardGap: compact ? 8 : 10
         readonly property int cellH: Math.floor((monthH - 46) / 6)
         readonly property int taskHeadH: compact ? 26 : roomy ? 30 : 28
         readonly property int titleSize: compact ? 12 : roomy ? 14 : 13
@@ -185,6 +185,17 @@ ShellRoot {
             var d = new Date(calYear, calMonth, day);
             var p = function (n) { return (n < 10 ? "0" : "") + n; };
             return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+        }
+        function clockMainText() {
+            var h = root.now.getHours();
+            var m = root.now.getMinutes();
+            if (!cfg.clock24h) {
+                h = h % 12;
+                if (h === 0)
+                    h = 12;
+                return h + ":" + (m < 10 ? "0" : "") + m;
+            }
+            return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
         }
         function isoWeek(d) {
             // ISO-8601 week number. Qt's "ww" format is not a week number.
@@ -390,8 +401,8 @@ ShellRoot {
             onLoaded: root.applyMetrics(themeFile.text())
         }
 
-        function gifUrl() {
-            var p = String(cfg.gif).trim();
+        function localUrl(raw) {
+            var p = String(raw).trim();
             if (p === "")
                 return "";
             if (p.indexOf("file://") === 0 || p.indexOf("http://") === 0 || p.indexOf("https://") === 0)
@@ -400,6 +411,8 @@ ShellRoot {
                 p = cfg.home + p.substring(1);
             return "file://" + p;
         }
+        function gifUrl() { return localUrl(cfg.gif); }
+        function skinUrl() { return localUrl(cfg.skinImage); }
 
         // ───────── todo bridge ─────────
         // The calendar is a viewer. It only opens the todo panel; it never
@@ -431,27 +444,109 @@ ShellRoot {
                 Behavior on y { NumberAnimation { duration: root.animBase; easing.type: Easing.OutCubic } }
                 Behavior on opacity { NumberAnimation { duration: root.animFast; easing.type: Easing.OutCubic } }
 
-                radius: th.radius + 2
+                radius: th.radius + 3
                 color: "transparent"
+                clip: true
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: root.a(th.accent, 0.30) }
-                    GradientStop { position: 0.05; color: root.a(th.cardBot, cfg.panelOpacity) }
+                    GradientStop { position: 0.0; color: root.a(th.cardBot, cfg.panelOpacity) }
+                    GradientStop { position: 0.10; color: root.a(th.cardBot, cfg.panelOpacity) }
+                    GradientStop { position: 0.72; color: root.a(th.cardBot, cfg.panelOpacity) }
                     GradientStop { position: 1.0; color: root.a(th.cardBot, cfg.panelOpacity) }
                 }
-                border.width: root.hairline
-                border.color: root.a(th.dim, cfg.highContrast ? 0.55 : 0.28)
+
+                // The accent wash lives above the opaque card so the header
+                // still gets its tint without letting the wallpaper through.
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    height: parent.height * 0.24
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: root.a(th.accent, 0.12 + cfg.aura * 0.10) }
+                        GradientStop { position: 0.62; color: root.a(th.accent, 0.025) }
+                        GradientStop { position: 1.0; color: "transparent" }
+                    }
+                }
 
                 Rectangle {
-                    width: parent.width - 90
-                    height: 1
-                    anchors.top: parent.top
-                    anchors.topMargin: 1
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: parent.height * 0.28
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 1.0; color: root.a(th.accent, 0.030 + cfg.aura * 0.020) }
+                    }
+                }
+                border.width: root.hairline
+                border.color: root.a(th.dim, cfg.highContrast ? 0.58 : 0.24 + cfg.aura * 0.08)
+
+                // A pair of very soft light sweeps give the flat card some
+                // depth without images or much overdraw.
+                Rectangle {
+                    x: parent.width * 0.54
+                    y: -parent.height * 0.18
+                    width: parent.width * 0.62
+                    height: parent.height * 0.82
+                    rotation: 16
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
                         GradientStop { position: 0.0; color: "transparent" }
-                        GradientStop { position: 0.5; color: root.a(th.accent, 0.85) }
+                        GradientStop { position: 0.48; color: root.a(th.accent, 0.030 + cfg.aura * 0.025) }
                         GradientStop { position: 1.0; color: "transparent" }
+                    }
+                }
+
+                Rectangle {
+                    x: -parent.width * 0.18
+                    y: parent.height * 0.55
+                    width: parent.width * 0.70
+                    height: parent.height * 0.60
+                    rotation: -18
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 0.5; color: root.a(th.bright, 0.018) }
+                        GradientStop { position: 1.0; color: "transparent" }
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    radius: Math.max(1, parent.radius - 1)
+                    color: "transparent"
+                    border.width: 1
+                    border.color: root.a(th.bright, cfg.highContrast ? 0.10 : 0.035)
+                }
+
+                Rectangle {
+                    width: parent.width - 70
+                    height: root.hairline + 1
+                    anchors.top: parent.top
+                    anchors.topMargin: 1
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    radius: height / 2
+                    gradient: Gradient {
+                        orientation: Gradient.Horizontal
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 0.5; color: root.a(th.accent, 0.55 + cfg.aura * 0.40) }
+                        GradientStop { position: 1.0; color: "transparent" }
+                    }
+                }
+
+                // A tiny constellation at the bottom edge makes the reserved
+                // skin stage feel intentional even when it is empty.
+                Repeater {
+                    model: 9
+                    delegate: Rectangle {
+                        required property int index
+                        x: parent.width * (0.10 + index * 0.095)
+                        y: parent.height - 8 - (index % 3) * 4
+                        width: index % 4 === 0 ? 2 : 1
+                        height: width
+                        radius: width / 2
+                        color: root.a(th.accent, 0.07 + cfg.aura * 0.06)
                     }
                 }
 
@@ -529,13 +624,22 @@ ShellRoot {
                                 Rectangle {
                                     width: root.dateBox
                                     height: root.dateBox
-                                    radius: Math.round(root.dateBox * 0.23)
+                                    radius: Math.round(root.dateBox * 0.25)
                                     gradient: Gradient {
-                                        GradientStop { position: 0.0; color: root.a(th.accent, 0.96) }
-                                        GradientStop { position: 1.0; color: root.a(th.accent, 0.42) }
+                                        GradientStop { position: 0.0; color: root.a(th.accent, 1.0) }
+                                        GradientStop { position: 0.55; color: root.a(th.accent, 0.82) }
+                                        GradientStop { position: 1.0; color: root.a(th.accent, 0.34) }
                                     }
                                     border.width: 1
-                                    border.color: root.a(th.accent, 0.6)
+                                    border.color: root.a(th.bright, 0.18 + cfg.aura * 0.16)
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        anchors.margins: 1
+                                        radius: Math.max(1, parent.radius - 1)
+                                        color: "transparent"
+                                        border.width: 1
+                                        border.color: root.a(th.bright, 0.10)
+                                    }
                                     Column {
                                         anchors.centerIn: parent
                                         spacing: -1
@@ -544,16 +648,16 @@ ShellRoot {
                                             text: Qt.formatDate(root.now, "d")
                                             color: th.cardBot
                                             font.family: th.font
-                                            font.pixelSize: 18
+                                            font.pixelSize: 19
                                             font.bold: true
                                         }
                                         Text {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             text: Qt.formatDate(root.now, "MMM").toUpperCase()
-                                            color: root.a(th.cardBot, 0.75)
+                                            color: root.a(th.cardBot, 0.78)
                                             font.family: th.font
                                             font.pixelSize: 6
-                                            font.letterSpacing: 0.5
+                                            font.letterSpacing: 0.8
                                         }
                                     }
                                 }
@@ -565,7 +669,7 @@ ShellRoot {
                                         spacing: 4
                                         Text {
                                             id: clockMain
-                                            text: Qt.formatTime(root.now, "HH:mm")
+                                            text: root.clockMainText()
                                             color: th.bright
                                             font.family: th.font
                                             font.pixelSize: root.clockSize
@@ -574,10 +678,20 @@ ShellRoot {
                                         Text {
                                             anchors.bottom: clockMain.bottom
                                             anchors.bottomMargin: 5
+                                            visible: cfg.showSeconds
                                             text: Qt.formatTime(root.now, "ss")
                                             color: th.accent
                                             font.family: th.font
                                             font.pixelSize: 11
+                                        }
+                                        Text {
+                                            anchors.bottom: clockMain.bottom
+                                            anchors.bottomMargin: 6
+                                            visible: !cfg.clock24h
+                                            text: Qt.formatTime(root.now, "AP")
+                                            color: root.a(th.dim, 0.9)
+                                            font.family: th.font
+                                            font.pixelSize: 8
                                         }
                                     }
                                     Text {
@@ -650,9 +764,10 @@ ShellRoot {
                         // ── lunar month line ──
                         MoonLine {
                             id: moonLine
-                            y: header.height + root.rowGap
+                            visible: cfg.showMoonLine
+                            y: header.height + (visible ? root.rowGap : 0)
                             width: parent.width
-                            height: root.moonH
+                            height: visible ? root.moonH : 0
                             accent: th.accent
                             bright: th.bright
                             dim: th.dim
@@ -664,14 +779,18 @@ ShellRoot {
                         // ── weather under the lunar line ──
                         WeatherStrip {
                             id: weather
-                            y: moonLine.y + moonLine.height + root.rowGap
+                            visible: cfg.showWeatherStrip
+                            y: moonLine.visible
+                                ? moonLine.y + moonLine.height + (visible ? root.rowGap : 0)
+                                : header.height + (visible ? root.rowGap : 0)
                             width: parent.width
-                            height: root.weatherH
+                            height: visible ? root.weatherH : 0
                             wx: wx
                             accent: th.accent
                             bright: th.bright
                             dim: th.dim
                             warn: th.warn
+                            cardBg: th.cardBot
                             font: th.font
                             onClicked: root.openDetail("weather")
                         }
@@ -679,13 +798,20 @@ ShellRoot {
                         // ── month + selected-day tasks ──
                         Item {
                             id: body
-                            y: weather.y + weather.height + root.bodyGap
+                            y: (weather.visible ? weather.y + weather.height
+                                : moonLine.visible ? moonLine.y + moonLine.height
+                                : header.height) + root.bodyGap
                             width: parent.width
                             height: parent.height - y
 
                             readonly property real leftW: Math.round(width * (root.compact ? 0.56 : 0.55))
-                            readonly property real rightW: width - leftW - (root.compact ? 8 : 12)
-                            readonly property real gifSize: Math.max(56, Math.min(root.gifMax, height - monthCard.height - 10))
+                            readonly property real rightW: width - leftW - root.cardGap
+                            readonly property real panelH: cfg.showGif
+                                ? Math.max(180, Math.min(root.monthH, height - 64))
+                                : height
+                            readonly property real skinH: Math.max(0, height - Math.min(root.monthH, height) - root.cardGap)
+                            readonly property real gifH: Math.max(0, height - panelH - root.cardGap)
+                            readonly property real gifSize: Math.max(48, Math.min(rightW, gifH, Math.round(root.monthH * 0.62)))
 
                             Row {
                                 anchors.fill: parent
@@ -700,9 +826,28 @@ ShellRoot {
                                         width: parent.width
                                         height: root.monthH
                                         radius: th.radius
-                                        color: root.a(th.dim, 0.035)
+                                        color: "transparent"
+                                        gradient: Gradient {
+                                            GradientStop { position: 0.0; color: root.a(th.bright, cfg.highContrast ? 0.09 : 0.050) }
+                                            GradientStop { position: 0.22; color: root.a(th.cardBot, 0.28) }
+                                            GradientStop { position: 1.0; color: root.a(th.cardBot, 0.46) }
+                                        }
                                         border.width: root.hairline
                                         border.color: root.a(th.dim, root.borderAlpha)
+
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 1
+                                            height: 1
+                                            gradient: Gradient {
+                                                orientation: Gradient.Horizontal
+                                                GradientStop { position: 0.0; color: "transparent" }
+                                                GradientStop { position: 0.5; color: root.a(th.accent, 0.20 + cfg.aura * 0.18) }
+                                                GradientStop { position: 1.0; color: "transparent" }
+                                            }
+                                        }
 
                                         Item {
                                             id: monthHead
@@ -808,7 +953,9 @@ ShellRoot {
                                             height: 9
 
                                             Repeater {
-                                                model: ["S", "M", "T", "W", "T", "F", "S"]
+                                                model: cfg.weekStartsMonday
+                                                    ? ["M", "T", "W", "T", "F", "S", "S"]
+                                                    : ["S", "M", "T", "W", "T", "F", "S"]
                                                 delegate: Item {
                                                     required property string modelData
                                                     width: parent.width / 7
@@ -841,6 +988,9 @@ ShellRoot {
                                             nowMs: root.now.getTime()
                                             font: th.font
                                             cellHeight: root.cellH
+                                            weekStartsMonday: cfg.weekStartsMonday
+                                            aura: cfg.aura
+                                            highContrast: cfg.highContrast
                                             onDayClicked: function (key) {
                                                 root.selectedKey = key;
                                                 root.monthPickerOpen = false;
@@ -868,117 +1018,61 @@ ShellRoot {
                                         }
                                     }
 
-                                    Item {
-                                        y: monthCard.height + 10
+                                    SkinStage {
+                                        id: skinStage
+                                        visible: cfg.showSkinStage && body.skinH > 1
+                                        y: monthCard.height + root.cardGap
                                         width: parent.width
-                                        height: body.gifSize
-
-                                        Rectangle {
-                                            id: gifCard
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            width: body.gifSize
-                                            height: body.gifSize
-                                            radius: th.radius
-                                            color: root.a(th.dim, 0.035)
-                                            border.width: root.hairline
-                                            border.color: root.a(th.dim, root.borderAlpha)
-                                            clip: true
-
-                                            Item {
-                                                id: gifFrame
-                                                anchors.fill: parent
-                                                anchors.margins: 1
-                                                visible: false
-                                                AnimatedImage {
-                                                    anchors.fill: parent
-                                                    source: root.gifUrl()
-                                                    fillMode: Image.PreserveAspectCrop
-                                                    asynchronous: true
-                                                    smooth: true
-                                                    playing: root.open && !cfg.reducedMotion
-                                                    cache: false
-                                                    sourceSize.width: gifFrame.width * 2
-                                                    sourceSize.height: gifFrame.height * 2
-                                                }
-                                            }
-
-                                            Item {
-                                                id: gifMask
-                                                anchors.fill: parent
-                                                anchors.margins: 1
-                                                layer.enabled: true
-                                                visible: false
-                                                Rectangle {
-                                                    anchors.fill: parent
-                                                    radius: 8
-                                                    color: "black"
-                                                }
-                                            }
-
-                                            MultiEffect {
-                                                anchors.fill: parent
-                                                anchors.margins: 1
-                                                source: gifFrame
-                                                maskEnabled: true
-                                                maskSource: gifMask
-                                                visible: cfg.gif !== ""
-                                                opacity: 0.95
-                                            }
-
-                                            Rectangle {
-                                                anchors.fill: parent
-                                                visible: cfg.gif === ""
-                                                radius: th.radius
-                                                color: root.a(th.dim, 0.04)
-                                                border.width: 1
-                                                border.color: root.a(th.dim, 0.14)
-
-                                                Column {
-                                                    anchors.centerIn: parent
-                                                    spacing: 3
-                                                    Text {
-                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                        text: "\u2727"
-                                                        color: root.a(th.accent, 0.55)
-                                                        font.family: th.font
-                                                        font.pixelSize: 20
-                                                    }
-                                                    Text {
-                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                        text: "gif"
-                                                        color: root.a(th.dim, 0.7)
-                                                        font.family: th.font
-                                                        font.pixelSize: 8
-                                                    }
-                                                    Text {
-                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                        text: "click to set"
-                                                        color: root.a(th.dim, 0.45)
-                                                        font.family: th.font
-                                                        font.pixelSize: 7
-                                                    }
-                                                }
-                                            }
-
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: root.settingsOpen = true
-                                            }
-                                        }
+                                        height: body.skinH
+                                        source: root.skinUrl()
+                                        fit: cfg.skinFit
+                                        hints: cfg.skinHints
+                                        aura: cfg.aura
+                                        accent: th.accent
+                                        bright: th.bright
+                                        dim: th.dim
+                                        cardBg: th.cardBot
+                                        font: th.font
+                                        radius: th.radius
+                                        highContrast: cfg.highContrast
+                                        onClicked: root.settingsOpen = true
                                     }
                                 }
 
-                                Rectangle {
-                                    id: taskCard
+                                Item {
                                     width: body.rightW
                                     height: parent.height
-                                    radius: th.radius
-                                    color: root.a(th.dim, 0.035)
-                                    border.width: root.hairline
-                                    border.color: root.a(th.dim, root.borderAlpha)
 
-                                    readonly property var stats: store.statsOn(root.selectedKey)
+                                    Rectangle {
+                                        id: taskCard
+                                        z: root.searchOpen ? 2 : 1
+                                        width: parent.width
+                                        height: body.panelH
+                                        radius: th.radius
+                                        color: "transparent"
+                                        gradient: Gradient {
+                                            GradientStop { position: 0.0; color: root.a(th.bright, cfg.highContrast ? 0.09 : 0.050) }
+                                            GradientStop { position: 0.22; color: root.a(th.cardBot, 0.28) }
+                                            GradientStop { position: 1.0; color: root.a(th.cardBot, 0.46) }
+                                        }
+                                        border.width: root.hairline
+                                        border.color: root.a(th.dim, root.borderAlpha)
+
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.margins: 1
+                                            height: 1
+                                            gradient: Gradient {
+                                                orientation: Gradient.Horizontal
+                                                GradientStop { position: 0.0; color: "transparent" }
+                                                GradientStop { position: 0.5; color: root.a(th.accent, 0.20 + cfg.aura * 0.18) }
+                                                GradientStop { position: 1.0; color: "transparent" }
+                                            }
+                                        }
+
+                                        readonly property var stats: store.statsOn(root.selectedKey)
                                     readonly property int taskCount: stats.total
 
                                     Item {
@@ -1052,15 +1146,25 @@ ShellRoot {
                                         x: 10
                                         y: taskHead.height + 11
                                         width: parent.width - 20
-                                        height: 2
-                                        radius: 1
-                                        color: root.a(th.dim, cfg.highContrast ? 0.3 : 0.14)
+                                        height: 3
+                                        radius: 2
+                                        color: root.a(th.dim, cfg.highContrast ? 0.34 : 0.16)
 
                                         Rectangle {
                                             width: parent.width * taskCard.stats.ratio
                                             height: parent.height
-                                            radius: 1
-                                            color: taskCard.stats.overdue > 0 ? th.warn : th.accent
+                                            radius: 2
+                                            gradient: Gradient {
+                                                orientation: Gradient.Horizontal
+                                                GradientStop {
+                                                    position: 0.0
+                                                    color: taskCard.stats.overdue > 0 ? root.a(th.warn, 0.72) : root.a(th.accent, 0.62)
+                                                }
+                                                GradientStop {
+                                                    position: 1.0
+                                                    color: taskCard.stats.overdue > 0 ? th.warn : th.accent
+                                                }
+                                            }
                                         }
                                     }
 
@@ -1069,12 +1173,16 @@ ShellRoot {
                                         x: 10
                                         y: taskProgress.y + 7
                                         width: parent.width - 20
-                                        height: 19
+                                        height: 20
                                         radius: 5
-                                        visible: store.nextUp !== null
-                                        color: root.a(th.accent, 0.055)
+                                        visible: cfg.showTaskNext && store.nextUp !== null
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop { position: 0.0; color: root.a(th.accent, 0.10) }
+                                            GradientStop { position: 1.0; color: root.a(th.accent, 0.035) }
+                                        }
                                         border.width: 1
-                                        border.color: root.a(th.accent, 0.18)
+                                        border.color: root.a(th.accent, 0.20 + cfg.aura * 0.10)
 
                                         Text {
                                             x: 6
@@ -1124,7 +1232,11 @@ ShellRoot {
 
                                     SearchPanel {
                                         id: searchPanel
-                                        anchors.fill: parent
+                                        x: 0
+                                        y: 0
+                                        width: parent.width
+                                        height: body.height
+                                        z: 80
                                         active: root.searchOpen
                                         store: store
                                         nowMs: root.now.getTime()
@@ -1241,6 +1353,29 @@ ShellRoot {
                                         }
                                     }
 
+                                    }
+
+                                    GifTile {
+                                        id: gifTile
+                                        visible: cfg.showGif && body.gifH > 1
+                                        x: Math.round((parent.width - width) / 2)
+                                        y: taskCard.height + root.cardGap
+                                        width: body.gifSize
+                                        height: body.gifSize
+                                        source: root.gifUrl()
+                                        fit: cfg.gifFit
+                                        open: root.open
+                                        reducedMotion: cfg.reducedMotion
+                                        aura: cfg.aura
+                                        accent: th.accent
+                                        bright: th.bright
+                                        dim: th.dim
+                                        cardBg: th.cardBot
+                                        font: th.font
+                                        radius: th.radius
+                                        highContrast: cfg.highContrast
+                                        onClicked: root.settingsOpen = true
+                                    }
                                 }
                             }
                         }
