@@ -339,8 +339,8 @@ Item {
 
                     SettingToggle {
                         width: parent.width
-                        label: "Reserve the stage"
-                        hint: "space under the month for future skins"
+                        label: "Show skin stage"
+                        hint: "the card under the month; space stays reserved"
                         on: sheet.cfg ? sheet.cfg.showSkinStage : true
                         accent: sheet.accent
                         bright: sheet.bright
