@@ -54,6 +54,9 @@ Your own frame: Settings > Profile > "Your own frame", pick a PNG with a transpa
 
 ## Special (the private fourth tab)
 
+The Special page is laid out 35% larger than the rest of the panel, so its dense labels and controls stay
+readable at the default panel width. The outer panel tabs are unchanged.
+
 A vault for two people. It stays locked until you type the passphrase, and it is really encrypted on disk:
 `vault.gpg` is GPG symmetric AES-256 over a `tar.zst` archive, with maximum key stretching (SHA512, 65M).
 While unlocked the contents live only in a private `0700` folder under `$XDG_RUNTIME_DIR` and are deleted
@@ -73,7 +76,8 @@ trick, not extra encryption.
   (PNG/JPG/GIF/WebP, stored inside the vault); the image drifts slowly. Names and birthdays live in Settings >
   Special.
 - **Memories**: the photo grid. "+ photo" copies a picture into the vault, "folder" imports a whole folder.
-  Open one to edit caption, date and city, favourite it (F), step with Left/Right, delete with Delete, Esc closes.
+  Open one to edit caption, date and city, favourite it (F), step with Left/Right. The viewer has a visible
+  **delete** action plus a separate **close** button; the Delete key still removes, and Esc also closes.
 - **Words**: quotes and letters. A sealed letter is encrypted with everything else but is not shown until its date.
 - **Together**: shared bucket list, a deck of long-distance date ideas, and the daily two-way mood check-in.
 - **Data**: change folder, lock now, copy the vault as a backup, export a plain HTML/Markdown memory book,

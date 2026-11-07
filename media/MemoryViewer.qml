@@ -104,7 +104,7 @@ FocusScope {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 10
-        height: 24
+        height: 30
 
         Text {
             anchors.left: parent.left
@@ -117,7 +117,7 @@ FocusScope {
         Row {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 12
+            spacing: 10
 
             Text {
                 text: mv.current() && mv.current().fav ? "\u2665" : "\u2661"
@@ -132,16 +132,38 @@ FocusScope {
                 }
             }
             Text {
-                text: mv.confirmDelete ? "sure?" : "\u2715"
-                color: mv.confirmDelete ? mv.th.accent : mv.th.dim
+                text: mv.confirmDelete ? "sure?" : "delete"
+                color: mv.confirmDelete ? mv.th.accent : mv.a(mv.th.dim, 0.9)
                 font.family: mv.th.font
-                font.pixelSize: mv.confirmDelete ? 11 : 14
+                font.pixelSize: 10
                 font.bold: mv.confirmDelete
                 MouseArea {
                     anchors.fill: parent
                     anchors.margins: -6
                     cursorShape: Qt.PointingHandCursor
                     onClicked: mv.del()
+                }
+            }
+            Rectangle {
+                width: 52
+                height: 22
+                radius: 4
+                color: closeMa.containsMouse ? mv.a(mv.th.accent, 0.18) : mv.a(mv.th.dim, 0.06)
+                border.width: 1
+                border.color: closeMa.containsMouse ? mv.th.accent : mv.a(mv.th.dim, 0.3)
+                Text {
+                    anchors.centerIn: parent
+                    text: "close"
+                    color: mv.th.bright
+                    font.family: mv.th.font
+                    font.pixelSize: 10
+                }
+                MouseArea {
+                    id: closeMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: mv.close()
                 }
             }
         }
