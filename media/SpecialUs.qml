@@ -18,6 +18,28 @@ Item {
     readonly property string nameThem: sp.profile.partner.name !== "" ? sp.profile.partner.name : "them"
     readonly property var sideCounts: sp.countdowns().filter(function (c) { return c.label !== "Next meet"; })
 
+    function partnerField(key) {
+        return us.sp.profile.partner && us.sp.profile.partner[key]
+            ? String(us.sp.profile.partner[key]).trim() : "";
+    }
+    readonly property string partnerHobbies: partnerField("hobbies")
+    readonly property string partnerWeight: partnerField("weight")
+    readonly property string partnerAgeText: {
+        var manual = partnerField("age");
+        if (manual !== "")
+            return manual;
+        var b = us.sp.parseDate(us.sp.profile.birthdayPartner);
+        if (!b)
+            return "";
+        var t = new Date();
+        var n = t.getFullYear() - b.getFullYear();
+        var m = t.getMonth() - b.getMonth();
+        if (m < 0 || (m === 0 && t.getDate() < b.getDate()))
+            n--;
+        return n >= 0 ? String(n) : "";
+    }
+    readonly property bool partnerHasInfo: partnerHobbies !== "" || partnerWeight !== "" || partnerAgeText !== ""
+
     function a(c, v) { return Qt.rgba(c.r, c.g, c.b, v); }
     function initial(who) {
         var n = sp.profile[who] ? sp.profile[who].name : "";
@@ -255,6 +277,89 @@ Item {
                                 us.frames.nextId(corner.who.frame))
                         }
                     }
+                }
+            }
+        }
+
+        // ───────── partner details ─────────
+        Rectangle {
+            width: parent.width
+            height: aboutCol.implicitHeight + 20
+            radius: 8
+            color: us.a(us.th.cardBot, 0.42)
+            border.width: 1
+            border.color: us.a(us.th.dim, 0.16)
+
+            Column {
+                id: aboutCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 10
+                spacing: 6
+
+                Text {
+                    width: parent.width
+                    elide: Text.ElideRight
+                    text: "ABOUT " + us.nameThem.toUpperCase()
+                    color: us.a(us.th.accent, 0.9)
+                    font.family: us.th.font
+                    font.pixelSize: 8
+                    font.bold: true
+                    font.letterSpacing: 1
+                }
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    text: us.partnerHobbies !== "" ? us.partnerHobbies : "No hobbies added yet"
+                    color: us.partnerHobbies !== "" ? us.th.bright : us.a(us.th.dim, 0.6)
+                    font.family: us.th.font
+                    font.pixelSize: 10
+                    lineHeight: 1.2
+                }
+                Row {
+                    spacing: 28
+                    Column {
+                        spacing: 0
+                        Text {
+                            text: us.partnerAgeText !== "" ? us.partnerAgeText : "\u2014"
+                            color: us.partnerAgeText !== "" ? us.th.bright : us.a(us.th.dim, 0.5)
+                            font.family: us.th.font
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
+                        Text {
+                            text: "age"
+                            color: us.a(us.th.dim, 0.75)
+                            font.family: us.th.font
+                            font.pixelSize: 7
+                        }
+                    }
+                    Column {
+                        spacing: 0
+                        Text {
+                            text: us.partnerWeight !== "" ? us.partnerWeight : "\u2014"
+                            color: us.partnerWeight !== "" ? us.th.bright : us.a(us.th.dim, 0.5)
+                            font.family: us.th.font
+                            font.pixelSize: 13
+                            font.bold: true
+                        }
+                        Text {
+                            text: "weight"
+                            color: us.a(us.th.dim, 0.75)
+                            font.family: us.th.font
+                            font.pixelSize: 7
+                        }
+                    }
+                }
+                Text {
+                    width: parent.width
+                    visible: !us.partnerHasInfo
+                    wrapMode: Text.WordWrap
+                    text: "Add hobbies, age and weight in Settings > Special."
+                    color: us.a(us.th.dim, 0.7)
+                    font.family: us.th.font
+                    font.pixelSize: 8
                 }
             }
         }

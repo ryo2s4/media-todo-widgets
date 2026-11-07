@@ -421,7 +421,7 @@ Scope {
     function _emptyProfile() {
         return {
             me: { name: "", avatar: "", frame: "" },
-            partner: { name: "", avatar: "", frame: "" },
+            partner: { name: "", avatar: "", frame: "", hobbies: "", weight: "", age: "" },
             since: "", nextMeet: "", birthdayMe: "", birthdayPartner: "", banner: ""
         };
     }
@@ -454,6 +454,11 @@ Scope {
                     avatar: String(p[who].avatar || ""),
                     frame: String(p[who].frame || "")
                 };
+                if (who === "partner") {
+                    d[who].hobbies = String(p[who].hobbies || "");
+                    d[who].weight = String(p[who].weight || "");
+                    d[who].age = String(p[who].age || "");
+                }
             }
         }
         for (var k of ["since", "nextMeet", "birthdayMe", "birthdayPartner", "banner"])

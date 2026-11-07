@@ -880,6 +880,51 @@ Rectangle {
                     }
                 }
 
+                Label2 {
+                    th: sc.th
+                    width: parent.width
+                    text: "More about your partner. These are optional and stored inside the vault."
+                }
+                Field {
+                    width: parent.width
+                    th: sc.th
+                    label: "Partner's hobbies"
+                    placeholder: "e.g. climbing, cooking, retro games"
+                    text: sc.special.profile.partner.hobbies || ""
+                    enabled: sc.special.unlocked
+                    opacity: enabled ? 1 : 0.45
+                    onCommitted: function (v) { sc.special.setPerson("partner", "hobbies", v.trim()); }
+                }
+                Row {
+                    width: parent.width
+                    spacing: 8
+                    Field {
+                        width: (parent.width - 8) / 2
+                        th: sc.th
+                        label: "Partner's age"
+                        placeholder: "e.g. 27"
+                        text: sc.special.profile.partner.age || ""
+                        enabled: sc.special.unlocked
+                        opacity: enabled ? 1 : 0.45
+                        onCommitted: function (v) { sc.special.setPerson("partner", "age", v.trim()); }
+                    }
+                    Field {
+                        width: (parent.width - 8) / 2
+                        th: sc.th
+                        label: "Partner's weight"
+                        placeholder: "e.g. 72 kg"
+                        text: sc.special.profile.partner.weight || ""
+                        enabled: sc.special.unlocked
+                        opacity: enabled ? 1 : 0.45
+                        onCommitted: function (v) { sc.special.setPerson("partner", "weight", v.trim()); }
+                    }
+                }
+                Label2 {
+                    th: sc.th
+                    width: parent.width
+                    text: "Age can stay empty: it is calculated from the birthday above."
+                }
+
                 Field {
                     width: parent.width
                     th: sc.th

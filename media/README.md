@@ -73,8 +73,10 @@ trick, not extra encryption.
 
 - **Us**: a banner, your device picture (`~/.face`) bottom-left, your partner's photo bottom-right, days since
   you met and until you meet, the small countdowns, and today's memory. Click the banner to choose or replace it
-  (PNG/JPG/GIF/WebP, stored inside the vault); the image drifts slowly. Names and birthdays live in Settings >
-  Special.
+  (PNG/JPG/GIF/WebP, stored inside the vault); the image drifts slowly. Names, birthdays and the optional
+  partner details (hobbies, age, weight) live in Settings > Special, and the Us page shows them in a small
+  **About** card. Leave the age empty to calculate it from the partner's birthday. These details stay inside
+  the encrypted vault.
 - **Memories**: the photo grid. "+ photo" copies a picture into the vault, "folder" imports a whole folder.
   Open one to edit caption, date and city, favourite it (F), step with Left/Right. The viewer has a visible
   **delete** action plus a separate **close** button; the Delete key still removes, and Esc also closes.
