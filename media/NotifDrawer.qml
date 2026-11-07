@@ -1,17 +1,29 @@
 import QtQuick
 
-// Notifications shown under every tab.
+// Notification history, hidden by default so the panel keeps its full height.
+// N (or the chevron once open) shows the drawer.
 Item {
     id: drawer
 
     property var th
     property var nf
+    property bool shown: false
     property bool expanded: true
 
     function a(c, v) { return Qt.rgba(c.r, c.g, c.b, v); }
 
-    implicitHeight: expanded ? 176 : 34
+    function toggle() {
+        if (!shown) {
+            expanded = true;
+            shown = true;
+        } else {
+            shown = false;
+        }
+    }
+
+    implicitHeight: shown ? (expanded ? 176 : 34) : 0
     height: implicitHeight
+    visible: shown || height > 0.5
     clip: true
     Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 

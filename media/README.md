@@ -32,7 +32,8 @@ Steam launch options are written into Steam's own `localconfig.vdf` (a `.bak-med
 
 ## Keys (click the panel once first)
 
-1 / 2 / 3 or Tab switch tabs, Esc close, N fold notifications, C clear notifications.
+1 / 2 / 3 or Tab switch tabs, Esc close, N show/hide notifications, C clear notifications.
+The notification history is hidden by default so the panel body gets the full height.
 Home: S Steam, D Discord, V VPN.
 Games: arrows, Enter play or install, F favorite, S sort, A category, R surprise me, / search.
 Music: Space, Left/Right, Up/Down volume, L lyrics.

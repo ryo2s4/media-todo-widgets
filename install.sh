@@ -101,11 +101,23 @@ install_widget calendar
 echo "[*] Installing launchers..."
 cat > "$BIN_DIR/media-toggle" << 'EOF'
 #!/usr/bin/env bash
-if ! pgrep -f '^qs -c media' >/dev/null 2>&1; then
-    qs -c media >/dev/null 2>&1 &
-    sleep 0.8
+# Toggle the media panel in place. Killing it here made every shortcut press
+# pay the full Quickshell startup cost.
+if pgrep -f '^qs -c media$' >/dev/null 2>&1; then
+    qs -c media ipc call media toggle >/dev/null 2>&1
+    exit 0
 fi
-qs -c media ipc call media toggle >/dev/null 2>&1
+
+# Cold start (login or crash): start detached and wait for the IPC socket.
+setsid qs -c media >/dev/null 2>&1 < /dev/null &
+for _ in $(seq 1 50); do
+    if qs -c media ipc show >/dev/null 2>&1; then
+        qs -c media ipc call media toggle >/dev/null 2>&1
+        exit 0
+    fi
+    sleep 0.1
+done
+exit 1
 EOF
 cat > "$BIN_DIR/calendar-toggle" << 'EOF'
 #!/usr/bin/env bash

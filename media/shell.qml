@@ -10,7 +10,7 @@ import Quickshell.Wayland
 // The panel emerges from the bottom-left corner.
 // Keys (click the panel once first):
 //   1 / 2 / 3 or Tab    switch tabs            Esc  close (or leave a text field / settings)
-//   N  fold/unfold notifications               C    clear notifications
+//   N  show/hide notifications                 C    clear notifications
 //   Home:  S Steam, D Discord, V VPN
 //   Games: arrows move, Enter play/install, F favorite, S sort, A category, R surprise me, / search
 //   Music: Space play/pause, Left/Right previous/next, Up/Down volume, L lyrics
@@ -50,8 +50,10 @@ ShellRoot {
         onOpenChanged: {
             if (open) {
                 Qt.callLater(root.focusKb);
-            } else if (special.lockOnClose) {
-                special.lock();
+            } else {
+                drawer.shown = false;
+                if (special.lockOnClose)
+                    special.lock();
             }
         }
 
@@ -287,7 +289,7 @@ ShellRoot {
                     } else if (k === Qt.Key_Tab) {
                         root.tab = (root.tab + 1) % root.tabCount;
                     } else if (k === Qt.Key_N) {
-                        drawer.expanded = !drawer.expanded;
+                        drawer.toggle();
                     } else if (k === Qt.Key_C) {
                         notifs.clear();
                     } else if (root.tab === 0) {

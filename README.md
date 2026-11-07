@@ -4,7 +4,7 @@ Three self-contained panels for a Hyprland/Ryoku desktop:
 
 | widget | what it is | shortcut |
 |---|---|---|
-| `media/` | media player, home dashboard, games, notifications, profile/Special tab | `SUPER + M`, `SUPER + G` |
+| `media/` | media player, home dashboard, games, hidden-by-default notifications, profile/Special tab | `SUPER + M`, `SUPER + G` |
 | `todo/` | right-side todo board with projects, tags, due dates, pomodoro, calendar sheet | `SUPER + S` |
 | `calendar/` | compact square calendar: full-height month grid + short day list, gif, lunar line, clock, weather | `SUPER + C` |
 
@@ -27,6 +27,7 @@ It:
 - **preserves your existing tasks, settings, music favourites, scratch note,
   cava config, notifications, weather cache and todo backups** when updating;
 - installs `~/.local/bin/media-toggle` and `~/.local/bin/calendar-toggle`;
+  the toggles reuse a running panel through IPC instead of restarting it;
 - adds the startup lines and keybinds to `~/.config/hypr/user.lua` when missing;
 - starts the panels.
 
