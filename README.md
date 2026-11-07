@@ -6,7 +6,7 @@ Three self-contained panels for a Hyprland/Ryoku desktop:
 |---|---|---|
 | `media/` | media player, home dashboard, games, notifications, profile/Special tab | `SUPER + M`, `SUPER + G` |
 | `todo/` | right-side todo board with projects, tags, due dates, pomodoro, calendar sheet | `SUPER + S` |
-| `calendar/` | compact square calendar: month grid + short day list, skin stage, gif, lunar line, clock, weather | `SUPER + C` |
+| `calendar/` | compact square calendar: full-height month grid + short day list, gif, lunar line, clock, weather | `SUPER + C` |
 
 ## Install
 
@@ -51,12 +51,11 @@ moon's age and changes its phase shape as the month turns. Click the line for
 phase, illumination and next new/full dates. Weather (Open-Meteo; city in
 Settings, or automatic IP lookup) sits directly under that line; click it for
 current details, sunrise/sunset, wind/humidity, a conservative local hint and a
-three-day outlook. The task card is shorter than before, with a framed square
-gif underneath it; the space under the month is a reserved skin stage with an
-optional image. Set either path in the calendar's Settings (gear in the header)
-or edit `~/.config/quickshell/calendar/settings.json`. No gif or skin is bundled
-(paths and copyright), so the slots show clickable placeholders until you choose
-one.
+three-day outlook. The month card fills the full left column, while the shorter
+task card has a framed square gif underneath it. Set the gif path in the
+calendar's Settings (gear in the header) or edit
+`~/.config/quickshell/calendar/settings.json`. No gif is bundled (paths and
+copyright), so the tile shows a clickable placeholder until you choose one.
 
 The card is resizable from 520–900 px (700 px by default, with S/M/L presets
 560/700/800). The task column shows a completion bar, an optional `NEXT` row for
@@ -64,8 +63,8 @@ the next upcoming task across the board, and repeat/tag metadata on each row;
 click the `NEXT` row to jump to that day. The settings sheet also has opacity,
 accent glow, automatic compact/comfortable/roomy layout, reduced motion, high
 contrast, clock format and seconds, week start, moon/weather/next/gif visibility,
-skin-stage options, gif fit, accent override and weather units. Existing settings
-files migrate forward automatically; the installer still preserves the whole
+gif fit, accent override and weather units. Existing settings files migrate
+forward automatically; the installer still preserves the whole
 `calendar/settings.json`.
 
 `SUPER + C` opens the calendar. On Ryoku the stock center-window action moves to

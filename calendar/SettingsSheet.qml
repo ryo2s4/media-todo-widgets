@@ -30,7 +30,6 @@ Item {
             cfg.set("gif", gifIn.text.trim());
             cfg.set("city", cityIn.text.trim());
             cfg.set("accentOverride", accentIn.text.trim());
-            cfg.set("skinImage", skinIn.text.trim());
         }
         sheet.closed();
     }
@@ -41,11 +40,9 @@ Item {
         gifIn.text = cfg.gif;
         cityIn.text = cfg.city;
         accentIn.text = cfg.accentOverride;
-        skinIn.text = cfg.skinImage;
         gifIn.cursorPosition = 0;
         cityIn.cursorPosition = 0;
         accentIn.cursorPosition = 0;
-        skinIn.cursorPosition = 0;
         flick.contentY = 0;
     }
 
@@ -322,98 +319,6 @@ Item {
                         onToggled: if (sheet.cfg) sheet.cfg.set("highContrast", !sheet.cfg.highContrast)
                     }
 
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: sheet.a(sheet.dim, sheet.highContrast ? 0.30 : 0.12)
-                    }
-
-                    Text {
-                        text: "SKIN STAGE"
-                        color: sheet.a(sheet.accent, 0.9)
-                        font.family: sheet.font
-                        font.pixelSize: 8
-                        font.letterSpacing: 1.1
-                        font.bold: true
-                    }
-
-                    SettingToggle {
-                        width: parent.width
-                        label: "Show skin stage"
-                        hint: "the card under the month; space stays reserved"
-                        on: sheet.cfg ? sheet.cfg.showSkinStage : true
-                        accent: sheet.accent
-                        bright: sheet.bright
-                        dim: sheet.dim
-                        font: sheet.font
-                        duration: sheet.motionFast
-                        onToggled: if (sheet.cfg) sheet.cfg.set("showSkinStage", !sheet.cfg.showSkinStage)
-                    }
-
-                    SettingField {
-                        id: skinIn
-                        width: parent.width
-                        label: "Skin image"
-                        placeholder: "~/Pictures/skin.png  (optional)"
-                        accent: sheet.accent
-                        bright: sheet.bright
-                        dim: sheet.dim
-                        font: sheet.font
-                        onCommitted: function (value) { if (sheet.cfg) sheet.cfg.set("skinImage", value.trim()); }
-                    }
-
-                    Row {
-                        width: parent.width
-                        spacing: 8
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "FIT"
-                            color: sheet.a(sheet.dim, 0.9)
-                            font.family: sheet.font
-                            font.pixelSize: 8
-                            font.letterSpacing: 0.8
-                        }
-                        Repeater {
-                            model: ["cover", "contain"]
-                            delegate: Rectangle {
-                                required property string modelData
-                                width: 58
-                                height: 21
-                                radius: 5
-                                color: sheet.cfg && sheet.cfg.skinFit === modelData
-                                    ? sheet.a(sheet.accent, 0.18) : sheet.a(sheet.dim, 0.06)
-                                border.width: 1
-                                border.color: sheet.cfg && sheet.cfg.skinFit === modelData
-                                    ? sheet.accent : sheet.a(sheet.dim, 0.2)
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData
-                                    color: sheet.cfg && sheet.cfg.skinFit === modelData
-                                        ? sheet.accent : sheet.a(sheet.dim, 0.9)
-                                    font.family: sheet.font
-                                    font.pixelSize: 8
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: if (sheet.cfg) sheet.cfg.set("skinFit", modelData)
-                                }
-                            }
-                        }
-                    }
-
-                    SettingToggle {
-                        width: parent.width
-                        label: "Show stage hints"
-                        hint: "the small label when no skin image is set"
-                        on: sheet.cfg ? sheet.cfg.skinHints : true
-                        accent: sheet.accent
-                        bright: sheet.bright
-                        dim: sheet.dim
-                        font: sheet.font
-                        duration: sheet.motionFast
-                        onToggled: if (sheet.cfg) sheet.cfg.set("skinHints", !sheet.cfg.skinHints)
-                    }
                 }
 
                 Column {

@@ -1,11 +1,10 @@
 # calendar panel (Quickshell)
 
 A square, top-right calendar for the todo board. The clock leads, a lunar-month
-line moves under it, weather sits below the line, and the month grid shares the
-upper body with the selected day's task list. The task card is deliberately
-shorter: a square gif sits underneath it, while the space below the month is a
-reserved skin stage. A single gif and an optional stage image keep the panel
-personal without turning it into a widget editor.
+line moves under it, weather sits below the line, and the month grid fills the
+left side beside the selected day's task list. The task card is deliberately
+shorter: a square gif sits underneath it. The taller month grid uses the space
+that would otherwise sit empty below the calendar.
 
 ```
 shell.qml         window, square layout, adaptive metrics, keyboard, todo bridge
@@ -30,7 +29,6 @@ SearchPanel.qml   read-only task search, grouped by due date
 DetailOverlay.qml modal shell for the moon and weather detail cards
 MoonDetail.qml    phase, illumination and next new/full dates
 WeatherDetail.qml current conditions, local hint and three-day outlook
-SkinStage.qml     reserved area under the month, with optional image
 GifTile.qml       framed square gif under the task card
 ```
 
@@ -56,21 +54,17 @@ the keybind or `qs -c calendar ipc call calendar toggle` works.
   the marker's lit shape, the phase name, illumination and lunar day all follow
   the real phase. Weather sits directly below the line. Both strips are
   optional.
-- **Month card**: the grid is compact. Every busy day shows a count; the tint is
-  accent for open work, warm for overdue and quiet when everything is done. Each
-  day still shows up to two due times (or `all` for an all-day task), with done
-  lines dimmed and struck through. Hovering a busy day opens a read-only detail
+- **Month card**: the grid stretches down the full left column. Every busy day
+  shows a count; the tint is accent for open work, warm for overdue and quiet
+  when everything is done. Each day still shows up to two due times (or `all`
+  for an all-day task), with done lines dimmed and struck through. Hovering a busy day opens a read-only detail
   card with its done/open/overdue summary, progress bar and next four tasks.
   Today has a filled dot, the selected day an accent ring. The week can start on
   Monday or Sunday. Click the month name/year or the `M` key for the month/year
   picker; click outside or close it to return.
-- **Skin stage**: the space immediately below the month is reserved for future
-  skins. It has its own quiet card, a placeholder hint, and an optional image
-  (`Skin image` in Settings) so a later skin has a stable home without moving
-  the calendar. The stage can be hidden independently.
 - **Tasks card**: the selected day's full list, grouped `OVERDUE`, `OPEN` and
-  `DONE`. The card is intentionally about month-card height rather than the full
-  panel, leaving room for the gif below it. The header shows done/total and any
+  `DONE`. The card is intentionally shorter than the month card, leaving room
+  for the gif below it. The header shows done/total and any
   overdue count, with a completion bar underneath. The optional `NEXT` row shows
   the next upcoming task across the whole board; click it to jump to that day.
   Each row has a read-only status dot, the title, and the due time (or
@@ -123,8 +117,8 @@ the calendar simply shows the resulting day and time.
   heads-up (heavy rain, snow, wind, heat, cold or fog) is labelled as a hint,
   never as an official alert.
 
-Click the gear in the header, the skin stage, or the gif tile for Settings. The
-moon line and weather strip open their read-only detail cards instead.
+Click the gear in the header or the gif tile for Settings. The moon line and
+weather strip open their read-only detail cards instead.
 
 The sheet is a compact two-column layout and stays fully visible and scrollable
 at the 520 px minimum size. It controls:
@@ -136,8 +130,6 @@ at the 520 px minimum size. It controls:
   automatically, with 10 px hysteresis at the 660/780 px thresholds.
 - **Reduce motion**: stops the card slide and pauses the gif.
 - **High contrast**: brighter secondary text and stronger borders.
-- **Skin stage**: reserve the area under the month, set an optional stage image,
-  choose cover/contain and hide the placeholder hint.
 - **Clock & calendar**: 24/12-hour clock, seconds, Monday or Sunday week start,
   lunar line, weather strip and next-task row visibility.
 - **Accent override**: empty uses the Ryoku palette, or a `#rrggbb` colour.

@@ -412,7 +412,6 @@ ShellRoot {
             return "file://" + p;
         }
         function gifUrl() { return localUrl(cfg.gif); }
-        function skinUrl() { return localUrl(cfg.skinImage); }
 
         // ───────── todo bridge ─────────
         // The calendar is a viewer. It only opens the todo panel; it never
@@ -532,21 +531,6 @@ ShellRoot {
                         GradientStop { position: 0.0; color: "transparent" }
                         GradientStop { position: 0.5; color: root.a(th.accent, 0.55 + cfg.aura * 0.40) }
                         GradientStop { position: 1.0; color: "transparent" }
-                    }
-                }
-
-                // A tiny constellation at the bottom edge makes the reserved
-                // skin stage feel intentional even when it is empty.
-                Repeater {
-                    model: 9
-                    delegate: Rectangle {
-                        required property int index
-                        x: parent.width * (0.10 + index * 0.095)
-                        y: parent.height - 8 - (index % 3) * 4
-                        width: index % 4 === 0 ? 2 : 1
-                        height: width
-                        radius: width / 2
-                        color: root.a(th.accent, 0.07 + cfg.aura * 0.06)
                     }
                 }
 
@@ -809,7 +793,6 @@ ShellRoot {
                             readonly property real panelH: cfg.showGif
                                 ? Math.max(180, Math.min(root.monthH, height - 64))
                                 : height
-                            readonly property real skinH: Math.max(0, height - Math.min(root.monthH, height) - root.cardGap)
                             readonly property real gifH: Math.max(0, height - panelH - root.cardGap)
                             readonly property real gifSize: Math.max(48, Math.min(rightW, gifH, Math.round(root.monthH * 0.62)))
 
@@ -824,7 +807,7 @@ ShellRoot {
                                     Rectangle {
                                         id: monthCard
                                         width: parent.width
-                                        height: root.monthH
+                                        height: parent.height
                                         radius: th.radius
                                         color: "transparent"
                                         gradient: Gradient {
@@ -987,7 +970,7 @@ ShellRoot {
                                             warn: th.warn
                                             nowMs: root.now.getTime()
                                             font: th.font
-                                            cellHeight: root.cellH
+                                            cellHeight: Math.max(root.cellH, Math.floor((parent.height - 46) / 6))
                                             weekStartsMonday: cfg.weekStartsMonday
                                             aura: cfg.aura
                                             highContrast: cfg.highContrast
@@ -1018,25 +1001,6 @@ ShellRoot {
                                         }
                                     }
 
-                                    SkinStage {
-                                        id: skinStage
-                                        visible: cfg.showSkinStage && body.skinH > 1
-                                        y: monthCard.height + root.cardGap
-                                        width: parent.width
-                                        height: body.skinH
-                                        source: root.skinUrl()
-                                        fit: cfg.skinFit
-                                        hints: cfg.skinHints
-                                        aura: cfg.aura
-                                        accent: th.accent
-                                        bright: th.bright
-                                        dim: th.dim
-                                        cardBg: th.cardBot
-                                        font: th.font
-                                        radius: th.radius
-                                        highContrast: cfg.highContrast
-                                        onClicked: root.settingsOpen = true
-                                    }
                                 }
 
                                 Item {

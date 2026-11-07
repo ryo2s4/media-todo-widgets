@@ -4,8 +4,6 @@
  "units": "c",
  "accentOverride": "",
  "gifFit": "cover",
- "skinImage": "",
- "skinFit": "cover",
  "panelWidth": 700,
  "panelOpacity": 1,
  "aura": 0.7,
@@ -18,7 +16,5 @@
  "showMoonLine": true,
  "showWeatherStrip": true,
  "showTaskNext": true,
- "showGif": true,
- "showSkinStage": true,
- "skinHints": true
+ "showGif": true
 }

@@ -28,20 +28,16 @@ Scope {
     property bool showWeatherStrip: true
     property bool showTaskNext: true
 
-    // Gif and the reserved skin stage
+    // Gif
     property bool showGif: true
     property string gifFit: "cover"       // "cover" | "contain"
-    property bool showSkinStage: true
-    property string skinImage: ""         // optional image for the reserved stage
-    property string skinFit: "cover"      // "cover" | "contain"
-    property bool skinHints: true         // show the "skin stage" placeholder text
 
-    readonly property var strKeys: ["gif", "city", "units", "accentOverride", "gifFit", "skinImage", "skinFit"]
+    readonly property var strKeys: ["gif", "city", "units", "accentOverride", "gifFit"]
     readonly property var numKeys: ["panelWidth", "panelOpacity", "aura"]
     readonly property var boolKeys: [
         "autoLayout", "reducedMotion", "highContrast",
         "clock24h", "showSeconds", "weekStartsMonday", "showMoonLine",
-        "showWeatherStrip", "showTaskNext", "showGif", "showSkinStage", "skinHints"
+        "showWeatherStrip", "showTaskNext", "showGif"
     ]
 
     readonly property bool accentValid: /^#[0-9a-f]{6}$/i.test(accentOverride.trim())
@@ -75,8 +71,6 @@ Scope {
             cfg.aura = Math.max(0, Math.min(1, cfg.aura));
             if (cfg.gifFit !== "contain")
                 cfg.gifFit = "cover";
-            if (cfg.skinFit !== "contain")
-                cfg.skinFit = "cover";
         } catch (e) {
             console.log("calendar: could not read settings.json:", e);
         }
