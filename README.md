@@ -4,7 +4,7 @@ Three self-contained panels for a Hyprland/Ryoku desktop:
 
 | widget | what it is | shortcut |
 |---|---|---|
-| `media/` | media player, home dashboard, games, hidden-by-default notifications, profile/Special tab | `SUPER + M`, `SUPER + G` |
+| `media/` | media player, home dashboard, games, hidden-by-default notifications, profile tab | `SUPER + M`, `SUPER + G` |
 | `todo/` | right-side todo board with projects, tags, due dates, pomodoro, calendar sheet | `SUPER + S` |
 | `calendar/` | compact square calendar: full-height month grid + short day list, gif, lunar line, clock, weather | `SUPER + C` |
 
@@ -81,7 +81,7 @@ Due field. The calendar only displays the result.
 Everything user-specific stays local:
 
 - `todo/tasks.json`, `todo/state.json`, `todo/status.json`
-- `media/settings.json`, `media/special.json`, `media/library.json`,
+- `media/settings.json`,  `media/library.json`,
   `media/favorites.json`, `media/notifs.json`, `media/note.txt`,
   `media/cava.conf`, `media/weather.json`
 - `calendar/settings.json`, `calendar/weather.json`
